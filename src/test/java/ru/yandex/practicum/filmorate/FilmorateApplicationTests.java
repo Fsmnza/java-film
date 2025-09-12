@@ -15,32 +15,33 @@ import static org.assertj.core.api.Assertions.*;
 
 @SpringBootTest
 class FilmorateApplicationTests {
-	private final UserController userController = new UserController();
-	private final FilmController filmController = new FilmController();
+    private final UserController userController = new UserController();
+    private final FilmController filmController = new FilmController();
 
-	@Test
-	void shouldSetLoginAsNameIfNameIsBlank() {
-		User user = new User();
-		user.setEmail("malika@mail.com");
-		user.setLogin("Mako");
-		user.setName("");
-		user.setBirthday((12));
+    @Test
+    void shouldSetLoginAsNameIfNameIsBlank() {
+        User user = new User();
+        user.setEmail("malika@mail.com");
+        user.setLogin("Mako");
+        user.setName("");
+        user.setBirthday((12));
 
-		User created = userController.create(user);
+        User created = userController.create(user);
 
-		assertThat(created.getName()).isEqualTo("Mako");
-	}
-	@Test
-	void shouldThrowIllegalArgumentExceptionWhenDurationIsNegative() {
-		Film film = new Film();
-		film.setName("конфета");
-		film.setDescription("вкусная");
-		film.setReleaseDate(LocalDate.of(2000, 1, 1));
-		film.setDuration(-100);
+        assertThat(created.getName()).isEqualTo("Mako");
+    }
 
-		assertThatThrownBy(() -> filmController.create(film))
-				.isInstanceOf(IllegalArgumentException.class)
-				.hasMessageContaining("Продолжительность фильма должна быть положительным числом");
-	}
+    @Test
+    void shouldThrowIllegalArgumentExceptionWhenDurationIsNegative() {
+        Film film = new Film();
+        film.setName("конфета");
+        film.setDescription("вкусная");
+        film.setReleaseDate(LocalDate.of(2000, 1, 1));
+        film.setDuration(-100);
+
+        assertThatThrownBy(() -> filmController.create(film))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Продолжительность фильма должна быть положительным числом");
+    }
 }
 
