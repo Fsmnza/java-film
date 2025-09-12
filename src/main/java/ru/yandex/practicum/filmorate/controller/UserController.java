@@ -35,7 +35,7 @@ public class UserController {
     public User update(@RequestBody User user) {
         validateUser(user);
         if (!users.containsKey(user.getId())) {
-            log.info("Попытка найти пользователя с таким id={} провалилась", user.getId());
+            log.warn("Попытка найти фильм с id={} провалилась", user.getId());
             throw new IllegalArgumentException("Пользователь с id " + user.getId() + " не существует");
         }
         users.put(user.getId(), user);
@@ -49,10 +49,10 @@ public class UserController {
         if (user.getLogin().isBlank() || user.getLogin().contains(" ")) {
             throw new IllegalArgumentException("Логин не может быть пустым или содержать пробелы");
         }
-        if (user.getName().isBlank()) {
+        if (user.getName() == null || user.getName().isBlank()) {
             user.setName(user.getLogin());
         }
-        if (user.getBirthday() > LocalDate.now().getYear()) {
+        if (user.getBirthday().isAfter(LocalDate.now())) {
             throw new IllegalArgumentException("Дата рождения не может быть в будущем");
         }
     }

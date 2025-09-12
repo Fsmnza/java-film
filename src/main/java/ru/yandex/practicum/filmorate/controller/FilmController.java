@@ -35,7 +35,7 @@ public class FilmController {
     public Film update(@RequestBody Film film) {
         validateUser(film);
         if (!films.containsKey(film.getId())) {
-            log.info("Попытка найти пользователя с таким id={} провалилась", film.getId());
+            log.warn("Попытка найти фильм с id={} провалилась", film.getId());
             throw new IllegalArgumentException("Пользователь с id " + film.getId() + " не существует");
         }
         films.put(film.getId(), film);
@@ -43,10 +43,10 @@ public class FilmController {
     }
 
     private void validateUser(Film film) {
-        if (film.getName() == null) {
+        if (film.getName() == null || film.getName().isBlank()) {
             throw new IllegalArgumentException("Название не может быть пустым");
         }
-        if (film.getDescription().length() > 200) {
+        if (film.getDescription() != null && film.getDescription().length() > 200) {
             throw new IllegalArgumentException("Максимальная длина описания — 200 символов");
         }
         if (film.getReleaseDate().isBefore(LocalDate.of(1895, 12, 28))) {
