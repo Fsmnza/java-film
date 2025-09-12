@@ -23,7 +23,7 @@ class FilmorateApplicationTests {
         user.setEmail("malika@mail.com");
         user.setLogin("Mako");
         user.setName("");
-        user.setBirthday((12));
+        user.setBirthday(LocalDate.of(2005, 9, 20));
 
         User created = userController.create(user);
 
@@ -35,7 +35,7 @@ class FilmorateApplicationTests {
         Film film = new Film();
         film.setName("конфета");
         film.setDescription("вкусная");
-        film.setReleaseDate(LocalDate.of(2000, 1, 1));
+        film.setReleaseDate(LocalDate.of(2000, 11, 27));
         film.setDuration(-100);
 
         assertThatThrownBy(() -> filmController.create(film))
