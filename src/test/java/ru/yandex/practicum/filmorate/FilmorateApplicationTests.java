@@ -37,7 +37,7 @@ class FilmorateApplicationTests {
     @Test
     void shouldThrowIllegalArgumentExceptionWhenDurationIsNegative() {
         Film film = new Film();
-        film.setName("конфета");
+        film.setName("конфетo");
         film.setDescription("вкусная");
         film.setReleaseDate(LocalDate.of(2000, 11, 27));
         film.setDuration(-100);
