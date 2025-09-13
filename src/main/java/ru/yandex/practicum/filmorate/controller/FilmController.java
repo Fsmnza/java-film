@@ -9,6 +9,7 @@ import ru.yandex.practicum.filmorate.service.FilmService;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/films")
@@ -26,13 +27,16 @@ public class FilmController {
     }
 
     @PostMapping
-    public ResponseEntity<Film> create(@RequestBody Film film) {
+    public ResponseEntity<?> create(@RequestBody Film film) {
         try {
             return ResponseEntity.ok(filmService.createFilm(film));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", e.getMessage()));
         }
     }
+
 
     @PutMapping
     public Film update(@RequestBody Film film) {

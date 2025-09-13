@@ -11,6 +11,7 @@ import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.time.LocalDate;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -44,9 +45,12 @@ class FilmorateApplicationTests {
         film.setReleaseDate(LocalDate.of(2000, 11, 27));
         film.setDuration(-100);
 
-        ResponseEntity<Film> response = filmController.create(film);
+        ResponseEntity<?> response = filmController.create(film);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-        assertThat(response.getBody()).isNull();
+        assertThat(response.getBody())
+                .isInstanceOf(Map.class)
+                .extracting("error")
+                .isEqualTo("Длительность должна быть положительной");
     }
 }
