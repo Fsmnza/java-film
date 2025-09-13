@@ -31,7 +31,8 @@ public class FilmController {
             return ResponseEntity.ok(filmService.createFilm(film));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-        }    }
+        }
+    }
 
     @PutMapping
     public Film update(@RequestBody Film film) {
