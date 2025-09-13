@@ -1,6 +1,7 @@
 package ru.yandex.practicum.filmorate;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import ru.yandex.practicum.filmorate.controller.FilmController;
 import ru.yandex.practicum.filmorate.controller.UserController;
@@ -11,11 +12,14 @@ import java.time.LocalDate;
 
 import static org.assertj.core.api.Assertions.*;
 
-
 @SpringBootTest
 class FilmorateApplicationTests {
-    private final UserController userController = new UserController();
-    private final FilmController filmController = new FilmController();
+
+    @Autowired
+    private UserController userController;
+
+    @Autowired
+    private FilmController filmController;
 
     @Test
     void shouldSetLoginAsNameIfNameIsBlank() {
@@ -43,4 +47,3 @@ class FilmorateApplicationTests {
                 .hasMessageContaining("Продолжительность фильма должна быть положительным числом");
     }
 }
-
