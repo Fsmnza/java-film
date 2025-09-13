@@ -43,6 +43,9 @@ public class FilmService {
     }
 
     public Film createFilm(Film film) {
+        if (film.getDuration() < 0) {
+            throw new IllegalArgumentException("Продолжительность фильма должна быть положительным числом");
+        }
         validateFilm(film);
         return filmStorage.addFilm(film);
     }
