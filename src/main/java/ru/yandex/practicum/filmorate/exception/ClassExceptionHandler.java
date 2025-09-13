@@ -23,7 +23,7 @@ public class ClassExceptionHandler {
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<String> IllegalArgument(IllegalArgumentException ex) {
+    public ResponseEntity<String> illegalArgument(IllegalArgumentException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
 
