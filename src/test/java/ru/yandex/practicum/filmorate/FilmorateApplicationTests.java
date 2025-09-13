@@ -3,6 +3,8 @@ package ru.yandex.practicum.filmorate;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import ru.yandex.practicum.filmorate.controller.FilmController;
 import ru.yandex.practicum.filmorate.controller.UserController;
 import ru.yandex.practicum.filmorate.model.Film;
@@ -35,15 +37,16 @@ class FilmorateApplicationTests {
     }
 
     @Test
-    void shouldThrowIllegalArgumentExceptionWhenDurationIsNegative() {
+    void shouldReturnBadRequestWhenDurationIsNegative() {
         Film film = new Film();
         film.setName("конфета");
         film.setDescription("вкусная");
         film.setReleaseDate(LocalDate.of(2000, 11, 27));
         film.setDuration(-100);
 
-        assertThatThrownBy(() -> filmController.create(film))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Длительность должна быть положительной");
+        ResponseEntity<Film> response = filmController.create(film);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody()).isNull();
     }
 }
