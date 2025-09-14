@@ -46,8 +46,13 @@ public class FilmService {
         if (film.getReleaseDate().isBefore(LocalDate.of(1895, 12, 28))) {
             throw new ValidationException("Дата релиза должна быть не раньше 28.12.1895");
         }
+        if (film.getDuration() < 0) {
+            throw new IllegalArgumentException("Длительность должна быть положительной");
+        }
         return filmStorage.addFilm(film);
     }
+
+
 
     public Film updateFilm(Film film) {
         if (filmStorage.getFilmById(film.getId()) == null) {
