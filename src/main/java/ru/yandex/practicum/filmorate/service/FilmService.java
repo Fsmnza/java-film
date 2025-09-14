@@ -1,7 +1,7 @@
 package ru.yandex.practicum.filmorate.service;
 
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.exception.MyServerException;
+import ru.yandex.practicum.filmorate.exception.FatalFilmException;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
@@ -44,10 +44,10 @@ public class FilmService {
 
     public Film createFilm(Film film) {
         if (film.getReleaseDate().isBefore(LocalDate.of(1895, 12, 28))) {
-            throw new MyServerException("Дата релиза должна быть не раньше 28.12.1895");
+            throw new FatalFilmException("Дата релиза должна быть не раньше 28.12.1895");
         }
         if (film.getDuration() < 0) {
-            throw new MyServerException("Длительность должна быть положительной");
+            throw new FatalFilmException("Длительность должна быть положительной");
         }
         return filmStorage.addFilm(film);
     }
