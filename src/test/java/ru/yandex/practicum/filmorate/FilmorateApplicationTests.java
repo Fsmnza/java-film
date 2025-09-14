@@ -15,7 +15,7 @@ import java.time.LocalDate;
 import static org.assertj.core.api.Assertions.*;
 
 @SpringBootTest
-class FilmControllerUpdateTests {
+public class FilmorateApplicationTests {
 
     @Autowired
     private FilmController filmController;
