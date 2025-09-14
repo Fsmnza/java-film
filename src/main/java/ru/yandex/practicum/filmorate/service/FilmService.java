@@ -43,8 +43,17 @@ public class FilmService {
     }
 
     public Film createFilm(Film film) {
-        if (film.getReleaseDate().isBefore(LocalDate.of(1895, 12, 28))) {
-            throw new ValidationException("Дата релиза должна быть не раньше определенной даты");
+        if (film.getName() == null || film.getName().isBlank()) {
+            throw new ValidationException("Название фильма не должно быть пустым");
+        }
+        if (film.getDescription() != null && film.getDescription().length() > 200) {
+            throw new ValidationException("Описание не может превышать 200 символов");
+        }
+        if (film.getReleaseDate() == null || film.getReleaseDate().isBefore(LocalDate.of(1895, 12, 28))) {
+            throw new ValidationException("Дата релиза должна быть не раньше 28.12.1895");
+        }
+        if (film.getDuration() <= 0) {
+            throw new ValidationException("Продолжительность должна быть положительной");
         }
         return filmStorage.addFilm(film);
     }
