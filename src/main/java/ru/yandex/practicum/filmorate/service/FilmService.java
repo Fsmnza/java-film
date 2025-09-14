@@ -44,7 +44,7 @@ public class FilmService {
 
     public Film createFilm(Film film) {
         if (film.getReleaseDate().isBefore(LocalDate.of(1895, 12, 28))) {
-            throw new ValidationException("Дата релиза должна быть не раньше 28.12.1895");
+            throw new RuntimeException("Дата релиза должна быть не раньше 28.12.1895");
         }
         if (film.getDuration() < 0) {
             throw new IllegalArgumentException("Длительность должна быть положительной");
