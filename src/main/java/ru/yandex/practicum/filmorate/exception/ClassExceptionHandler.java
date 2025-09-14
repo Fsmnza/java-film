@@ -27,6 +27,7 @@ public class ClassExceptionHandler {
         });
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
     }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<?> validationExceptions(MethodArgumentNotValidException ex) {
         Map<String, String> errors = new HashMap<>();
