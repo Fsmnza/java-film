@@ -50,6 +50,7 @@ public class ClassExceptionHandler {
         log.error("неожиданное иссключение: {}", ex.getMessage(), ex);
         return Map.of("error", "Произошла непредвиденная ошибка");
     }
+
     @ExceptionHandler(FatalFilmException.class)
     public ResponseEntity<?> handleFatalFilmException(FatalFilmException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -57,4 +58,3 @@ public class ClassExceptionHandler {
     }
 
 }
-
