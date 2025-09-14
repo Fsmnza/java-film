@@ -68,7 +68,6 @@ public class UserService {
     }
 
     public User addUser(User user) {
-        validate(user);
         return userStorage.addUser(user);
     }
 
@@ -87,17 +86,5 @@ public class UserService {
 
     public List<User> getAllUsers() {
         return userStorage.getAllUser();
-    }
-
-    private void validate(User user) {
-        if (user.getName() == null || user.getName().isBlank()) {
-            user.setName(user.getLogin());
-        }
-        if (user.getEmail() == null || !user.getEmail().contains("@")) {
-            throw new ValidationException("Некорректный email");
-        }
-        if (user.getBirthday().isAfter(LocalDate.now())) {
-            throw new ValidationException("Дата рождения не может быть в будущем");
-        }
     }
 }

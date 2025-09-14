@@ -11,46 +11,56 @@ import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.time.LocalDate;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.*;
 
 @SpringBootTest
-class FilmorateApplicationTests {
-
-    @Autowired
-    private UserController userController;
+class FilmControllerUpdateTests {
 
     @Autowired
     private FilmController filmController;
 
     @Test
-    void shouldSetLoginAsNameIfNameIsBlank() {
-        User user = new User();
-        user.setEmail("malika@mail.com");
-        user.setLogin("Mako");
-        user.setName("");
-        user.setBirthday(LocalDate.of(2005, 9, 20));
+    void shouldUpdateFilm() {
+        Film film = new Film();
+        film.setId(1);
+        film.setName("Ван пис");
+        film.setDescription("Аниме");
+        film.setReleaseDate(LocalDate.of(2000, 3, 23));
+        film.setDuration(120);
 
-        User created = userController.create(user);
+        filmController.create(film);
+        film.setName("Наруто");
+        film.setDescription("Другое аниме");
+        film.setDuration(136);
 
-        assertThat(created.getName()).isEqualTo("Mako");
+        ResponseEntity<Film> response = filmController.update(film);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getName()).isEqualTo("Наруто");
     }
 
+    @Autowired
+    private UserController userController;
+
     @Test
-    void shouldReturnBadRequestWhenDurationIsNegative() {
-        Film film = new Film();
-        film.setName("конфета");
-        film.setDescription("вкусная");
-        film.setReleaseDate(LocalDate.of(2000, 11, 27));
-        film.setDuration(-100);
+    void shouldUpdateUser() {
+        User user = new User();
+        user.setId(1);
+        user.setEmail("mako@mail.com");
+        user.setLogin("Fsmnza");
+        user.setName("Malika");
+        user.setBirthday(LocalDate.of(2005, 8, 11));
 
-        ResponseEntity<?> response = filmController.create(film);
+        userController.create(user);
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-        assertThat(response.getBody())
-                .isInstanceOf(Map.class)
-                .extracting("error")
-                .isEqualTo("Длительность должна быть положительной");
+        user.setLogin("neFsmnza");
+        user.setName("neMalika");
+
+        ResponseEntity<User> response = userController.update(user);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getLogin()).isEqualTo("neFsmnza");
+        assertThat(response.getBody().getName()).isEqualTo("neMalika");
     }
 }

@@ -43,10 +43,9 @@ public class FilmService {
     }
 
     public Film createFilm(Film film) {
-        if (film.getDuration() < 0) {
-            throw new IllegalArgumentException("Длительность должна быть положительной");
+        if (film.getReleaseDate().isBefore(LocalDate.of(1895, 12, 28))) {
+            throw new ValidationException("Дата релиза должна быть не раньше определенной даты");
         }
-        validateFilm(film);
         return filmStorage.addFilm(film);
     }
 
@@ -54,7 +53,6 @@ public class FilmService {
         if (filmStorage.getFilmById(film.getId()) == null) {
             throw new NotFoundException("Фильм с id=" + film.getId() + " не найден");
         }
-        validateFilm(film);
         return filmStorage.updateFilm(film);
     }
 
@@ -64,20 +62,5 @@ public class FilmService {
                 .sorted((f1, f2) -> Integer.compare(f2.getLikes().size(), f1.getLikes().size()))
                 .limit(number)
                 .toList();
-    }
-
-    private void validateFilm(Film film) {
-        if (film.getName() == null || film.getName().isBlank()) {
-            throw new ValidationException("Название не может быть пустым");
-        }
-        if (film.getDescription() != null && film.getDescription().length() > 200) {
-            throw new ValidationException("Максимальная длина описания — 200 символов");
-        }
-        if (film.getReleaseDate().isBefore(LocalDate.of(1895, 12, 28))) {
-            throw new ValidationException("Дата релиза — не раньше 28 декабря 1895 года");
-        }
-        if (film.getDuration() <= 0) {
-            throw new ValidationException("Продолжительность фильма должна быть положительным числом");
-        }
     }
 }
