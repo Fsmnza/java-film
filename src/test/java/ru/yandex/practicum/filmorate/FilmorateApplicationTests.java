@@ -48,7 +48,7 @@ class FilmControllerUpdateTests {
         User user = new User();
         user.setId(1);
         user.setEmail("mako@mail.com");
-        user.setLogin("Fsmnza");
+        user.setLogin("Mk");
         user.setName("Malika");
         user.setBirthday(LocalDate.of(2005, 8, 11));
 
