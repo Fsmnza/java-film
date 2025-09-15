@@ -1,15 +1,12 @@
-package ru.yandex.practicum.filmorate.model;
-
+package ru.yandex.practicum.filmorate.dto;
 import lombok.Data;
-import jakarta.validation.constraints.*;
+import ru.yandex.practicum.filmorate.model.Rating;
 
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
-
-
 @Data
-public class Film {
+public class FilmDto {
     private int id;
     private String name;
     private String description;
