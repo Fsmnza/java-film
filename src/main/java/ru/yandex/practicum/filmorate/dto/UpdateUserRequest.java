@@ -16,20 +16,22 @@ public class UpdateUserRequest {
     private Set<Long> friends = new HashSet<>();
 
     public boolean hasLogin() {
-        return ! (login == null || login.isBlank());
+        return !(login == null || login.isBlank());
     }
 
     public boolean hasEmail() {
-        return ! (email == null || email.isBlank());
+        return !(email == null || email.isBlank());
     }
 
     public boolean hasBirthday() {
-        return ! (birthday == null);
+        return !(birthday == null);
     }
+
     public boolean hasFriends() {
-        return ! (friends == null || friends.isEmpty());
+        return !(friends == null || friends.isEmpty());
     }
+
     public boolean hasId() {
-        return ! (id == null);
+        return !(id == null);
     }
 }

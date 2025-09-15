@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 import java.time.LocalDate;
+
 @Data
 public class NewFilmRequest {
     @NotBlank(message = "Название фильма не должно быть пустым")

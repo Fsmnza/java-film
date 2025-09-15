@@ -1,15 +1,15 @@
 package ru.yandex.practicum.filmorate.model;
 
-public class Rating {
-    private Integer id;
+public class Genre {
+    private int id;
     private String name;
 
-    public Rating(int id, String name) {
+    public Genre(int id, String name) {
         this.id = id;
         this.name = name;
     }
 
-    public Integer getId() {
+    public int getId() {
         return id;
     }
 
