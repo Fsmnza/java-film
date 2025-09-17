@@ -1,15 +1,15 @@
-package ru.yandex.practicum.filmorate.model;
+package ru.yandex.practicum.filmorate.dto;
 
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Past;
+import jakarta.validation.constraints.Pattern;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 import java.time.LocalDate;
 
 @Data
-@EqualsAndHashCode(of = {"email"})
-public class User {
-    private Integer id;
+public class NewUserRequest {
     @NotBlank(message = "Электронная почта не может быть пустой")
     @Pattern(regexp = "^\\S+$", message = "Электронная почта не может содержать пробелы")
     @Email(message = "Электронная почта не соответствует формату")
