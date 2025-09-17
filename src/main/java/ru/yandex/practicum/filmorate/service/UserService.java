@@ -47,12 +47,12 @@ public class UserService {
         if (userRepository.getByEmail(request.getEmail()).isPresent()) {
             throw new ValidationException("Этот email уже используется");
         }
-        User user = UserMapper.mapToUser(request);
-        if (user.getName() == null) {
-            user.setName(user.getLogin());
+        User users = UserMapper.mapToUser(request);
+        if (users.getName() == null) {
+            users.setName(users.getLogin());
         }
-        user = userRepository.create(user);
-        return UserMapper.mapToUserDto(user);
+        users = userRepository.create(user);
+        return UserMapper.mapToUserDto(users);
     }
 
     public UserDto update(UpdateUserRequest request) {
