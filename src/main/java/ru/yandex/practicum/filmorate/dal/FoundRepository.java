@@ -37,8 +37,8 @@ public class FoundRepository<T> {
     }
 
     protected void update(String query, Object... params) {
-        int rowsUpdated = jdbcTemplate.update(query, params);
-        if (rowsUpdated == 0) {
+        int rowsUpdate = jdbcTemplate.update(query, params);
+        if (rowsUpdate == 0) {
             logger.warn("Не было обновлено ни одной строки");
         }
     }
