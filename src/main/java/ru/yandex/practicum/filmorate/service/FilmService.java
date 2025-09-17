@@ -1,15 +1,23 @@
 package ru.yandex.practicum.filmorate.service;
 
-import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.controller.GenreDbStorage;
 import ru.yandex.practicum.filmorate.dal.FilmRepository;
+import ru.yandex.practicum.filmorate.dal.GenreRepository;
+import ru.yandex.practicum.filmorate.dal.RatingRepository;
+import ru.yandex.practicum.filmorate.dal.UserRepository;
+import ru.yandex.practicum.filmorate.dto.FilmDto;
+import ru.yandex.practicum.filmorate.dto.GenreDto;
+import ru.yandex.practicum.filmorate.dto.NewFilmRequest;
+import ru.yandex.practicum.filmorate.dto.UpdateFilmRequest;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
+import ru.yandex.practicum.filmorate.mappers.FilmMapper;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
-import ru.yandex.practicum.filmorate.storage.FilmStorage;
-import ru.yandex.practicum.filmorate.storage.RatingDbStorage;
+import ru.yandex.practicum.filmorate.model.Rating;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -17,110 +25,101 @@ import java.util.stream.Collectors;
 
 @Service
 public class FilmService {
-    private final FilmStorage filmStorage;
     private final FilmRepository filmRepository;
-    private final RatingDbStorage ratingDbStorage;
-    private final GenreDbStorage genreDbStorage;
+    private final RatingRepository ratingRepository;
+    private final GenreRepository genreRepository;
+    private final UserRepository userRepository;
 
-    public FilmService(@Qualifier("dbStorage") FilmStorage filmStorage,
-                       FilmRepository filmRepository,
-                       RatingDbStorage ratingDbStorage,
-                       GenreDbStorage genreDbStorage) {
-        this.filmStorage = filmStorage;
+    @Autowired
+    public FilmService(FilmRepository filmRepository, GenreRepository genreRepository,
+                       RatingRepository ratingRepository, UserRepository userRepository) {
         this.filmRepository = filmRepository;
-        this.ratingDbStorage = ratingDbStorage;
-        this.genreDbStorage = genreDbStorage;
+        this.genreRepository = genreRepository;
+        this.ratingRepository = ratingRepository;
+        this.userRepository = userRepository;
     }
 
-    public Film addFilm(Film film) {
-        if (film.getRating() == null || film.getRating().getId() == null) {
-            throw new ValidationException("Фильм должен иметь рейтинг MPA");
+    public List<FilmDto> getAll() {
+        return filmRepository.getAll().stream()
+                .map(FilmMapper::mapToFilmDto)
+                .collect(Collectors.toList());
+    }
+
+    public FilmDto getById(int id) {
+        Optional<Film> mainFilm = filmRepository.getById(id);
+        if (mainFilm.isEmpty()) {
+            throw new NotFoundException("Фильм с id = " + id + " не найден");
         }
-        if (film.getRating() == null ||
-                ratingDbStorage.getRatingById(film.getRating().getId()).isEmpty()) {
-            throw new ValidationException("Некорректный рейтинг");
+        return FilmMapper.mapToFilmDto(mainFilm.get());
+    }
+
+    public FilmDto create(NewFilmRequest request) {
+        Optional<Rating> mainRaiting = ratingRepository.getById(request.getMpa().getId());
+        if (mainRaiting.isEmpty()) {
+            throw new NotFoundException("Рейтинг с id = " + request.getMpa().getId() + " не найден");
         }
-        if (film.getGenres() != null) {
-            film.getGenres().forEach(genre -> {
-                if (genreDbStorage.getGenreById(genre.getId()).isEmpty()) {
-                    throw new ValidationException("Некорректный жанр с id=" + genre.getId());
+
+        Rating mpaRating = mainRaiting.get();
+
+        Set<Genre> genres = new HashSet<>();
+        if (request.getGenres() != null) {
+            for (GenreDto genreDto : request.getGenres()) {
+                Optional<Genre> mainGemre = genreRepository.getById(genreDto.getId());
+                if (mainGemre.isEmpty()) {
+                    throw new NotFoundException("Жанр с id = " + genreDto.getId() + " не найден");
                 }
-            });
+
+                genres.add(mainGemre.get());
+            }
         }
-        Film created = filmStorage.addFilm(film);
-        if (film.getGenres() != null && !film.getGenres().isEmpty()) {
-            genreDbStorage.saveFilmGenres(created.getId(), film.getGenres());
-        }
-        return created;
+
+        Film film = FilmMapper.mapToFilm(request, mpaRating, genres);
+        filmRepository.create(film);
+        return FilmMapper.mapToFilmDto(film);
     }
 
-    public Film updateFilm(Film film) {
-        if (film.getRating() == null ||
-                ratingDbStorage.getRatingById(film.getRating().getId()).isEmpty()) {
-            throw new ValidationException("Указан неверный MPA рейтинг");
+    public FilmDto update(UpdateFilmRequest request) {
+        Optional<Film> mainFilm = filmRepository.getById(request.getId());
+
+        if (mainFilm.isEmpty()) {
+            throw new NotFoundException("Фильм с id = " + request.getId() + " не найден");
         }
-        if (film.getGenres() != null) {
-            film.getGenres().forEach(genre -> {
-                if (genreDbStorage.getGenreById(genre.getId()).isEmpty()) {
-                    throw new ValidationException("Указан неверный жанр с id=" + genre.getId());
-                }
-            });
+        Film updatedFilm = FilmMapper.updateFilmFields(mainFilm.get(), request);
+        updatedFilm = filmRepository.update(updatedFilm);
+        return FilmMapper.mapToFilmDto(updatedFilm);
+    }
+
+    public void putLike(int filmId, int userId) {
+        if (filmRepository.getById(filmId).isEmpty()) {
+            throw new NotFoundException("Фильм с id = " + filmId + " не найден");
         }
-        Film updated = filmStorage.updateFilm(film);
-        genreDbStorage.deleteFilmGenres(film.getId());
-        if (film.getGenres() != null && !film.getGenres().isEmpty()) {
-            genreDbStorage.saveFilmGenres(film.getId(), film.getGenres());
+        if (userRepository.getById(userId).isEmpty()) {
+            throw new NotFoundException("Пользователь с id = " + userId + " не найден");
         }
-        return updated;
-    }
-
-    public Optional<Film> findById(int id) {
-        return Optional.ofNullable(filmStorage.getFilmById(id));
-    }
-
-    public Film getFilmById(int id) {
-        Film film = filmStorage.getFilmById(id);
-        if (film != null) {
-            Set<Genre> genres = genreDbStorage.getGenresByFilmId(id)
-                    .stream()
-                    .collect(Collectors.toSet());
-            film.setGenres(genres);
+        if (filmRepository.getLikesUserId(filmId).contains(userId)) {
+            throw new ValidationException("Пользователь с id = " + userId +
+                    " уже поставил лайк фильму с id = " + filmId);
         }
-        return film;
-    }
-
-    public List<Film> getAllFilms() {
-        List<Film> films = filmStorage.getAllFilms();
-        films.forEach(f -> {
-            Set<Genre> genres = genreDbStorage.getGenresByFilmId(f.getId())
-                    .stream()
-                    .collect(Collectors.toSet());
-            f.setGenres(genres);
-        });
-        return films;
-    }
-
-    public void deleteFilm(int id) {
-        genreDbStorage.deleteFilmGenres(id);
-        filmStorage.deleteFilm(id);
-    }
-
-    public void addLike(int filmId, int userId) {
-        filmRepository.addLike(filmId, userId);
+        filmRepository.putLike(filmId, userId);
     }
 
     public void removeLike(int filmId, int userId) {
+        if (filmRepository.getById(filmId).isEmpty()) {
+            throw new NotFoundException("Фильм с id = " + filmId + " не найден");
+        }
+        if (userRepository.getById(userId).isEmpty()) {
+            throw new NotFoundException("Пользователь с id = " + userId + " не найден");
+        }
         filmRepository.removeLike(filmId, userId);
     }
 
-    public List<Film> getPopularFilms(int count) {
-        List<Film> films = filmRepository.getPopularFilms(count);
-        films.forEach(f -> {
-            Set<Genre> genres = genreDbStorage.getGenresByFilmId(f.getId())
-                    .stream()
-                    .collect(Collectors.toSet());
-            f.setGenres(genres);
-        });
-        return films;
+    public List<FilmDto> getPopular(int count) {
+        if (count <= 0) {
+            throw new ValidationException("Количество фильмов должно быть положительным числом");
+        }
+        List<Film> popular = filmRepository.getPopular(count);
+        return popular.stream()
+                .map(FilmMapper::mapToFilmDto)
+                .collect(Collectors.toList());
     }
 }

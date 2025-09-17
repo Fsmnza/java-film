@@ -5,20 +5,23 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
+import ru.yandex.practicum.filmorate.model.ReleaseDate;
 
 import java.time.LocalDate;
+import java.util.Set;
 
 @Data
 public class NewFilmRequest {
-    @NotBlank(message = "Название фильма не должно быть пустым")
+    @NotBlank(message = "Название не может быть пустым")
     private String name;
-
-    @Size(max = 200, message = "Описание не может превышать 200 символов")
+    @Size(max = 200, message = "Максимальная длина описания — 200 символов")
+    @NotBlank(message = "Описание должно быть заполнено")
     private String description;
-
-    @NotNull(message = "Дата релиза обязательна")
+    @ReleaseDate
     private LocalDate releaseDate;
-
-    @Positive(message = "Продолжительность должна быть положительной")
+    @Positive(message = "Продолжительность фильма должна быть положительным числом")
     private int duration;
+    @NotNull(message = "Рейтинг должен быть указан")
+    private RatingDto mpa;
+    private Set<GenreDto> genres;
 }

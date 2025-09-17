@@ -1,56 +1,100 @@
 package ru.yandex.practicum.filmorate.dal;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
-public class UserRepository {
+public class UserRepository extends FoundRepository {
+    private static final String TABLE_NAME = "users";
+    private static final String FIND_ALL_QUERY = "SELECT * FROM " + TABLE_NAME;
+    private static final String FIND_BY_ID_QUERY = "SELECT * FROM " + TABLE_NAME + " WHERE user_id = ?";
+    private static final String FIND_BY_EMAIL_QUERY = "SELECT * FROM " + TABLE_NAME + " WHERE email = ?";
+    private static final String INSERT_QUERY = "INSERT INTO " + TABLE_NAME +
+            "(email, login, name, birthday)" +
+            "VALUES (?, ?, ?, ?)";
+    private static final String UPDATE_QUERY = "UPDATE " + TABLE_NAME + " " +
+            "SET email = ?, login = ?, name = ?, birthday = ? WHERE user_id = ?";
+    private static final String FIND_FRIENDS_QUERY = "SELECT u.user_id, u.email, u.login, u.name, u.birthday " +
+            "FROM friendships AS f JOIN " + TABLE_NAME + " AS u ON f.friend_id = u.user_id " +
+            "WHERE f.user_id = ?";
+    private static final String INSERT_INTO_FRIENDSHIPS_QUERY = "INSERT INTO friendships(user_id, friend_id, status) " +
+            "VALUES(?, ?, true)";
+    private static final String DELETE_FROM_FRIENDSHIPS_QUERY = "DELETE FROM friendships " +
+            "WHERE user_id = ? AND friend_id = ?";
+    static final Logger logger = LoggerFactory.getLogger(UserRepository.class);
 
-    private final JdbcTemplate jdbc;
-    private final RowMapper<User> userRowMapper = (rs, rowNum) -> new User(
-            rs.getInt("id"),
-            rs.getString("email"),
-            rs.getString("login"),
-            rs.getString("name"),
-            rs.getDate("birthday").toLocalDate()
-    );
+    @Autowired
+    public UserRepository(JdbcTemplate jdbcTemplate, RowMapper<User> rowMapper) {
+        super(jdbcTemplate, rowMapper);
+    }
 
-    public UserRepository(JdbcTemplate jdbc) {
-        this.jdbc = jdbc;
+    public List<User> getAll() {
+        logger.debug("Запрос на получение всех строк таблицы users");
+        return findMany(FIND_ALL_QUERY);
+    }
+
+    public Optional<User> getById(int userId) {
+        logger.debug("Запрос на получение строки таблицы users с id = {}", userId);
+        return findOne(FIND_BY_ID_QUERY, userId);
+    }
+
+    public Optional<User> getByEmail(String email) {
+        logger.debug("Запрос на получение строки таблицы users с email = {}", email);
+        return findOne(FIND_BY_EMAIL_QUERY, email);
+    }
+
+    public User create(User user) {
+        logger.debug("Запрос на вставку в таблицу users");
+        int id = insert(INSERT_QUERY,
+                user.getEmail(),
+                user.getLogin(),
+                user.getName(),
+                user.getBirthday()
+        );
+        logger.debug("Получен новый id = {}", id);
+        user.setId(id);
+
+        logger.debug("Добавлена строка в таблицу users с id = {}", id);
+        return user;
+    }
+
+    public User update(User user) {
+        logger.debug("Запрос на обновление строки в таблице films с id = {}", user.getId());
+        update(UPDATE_QUERY,
+                user.getEmail(),
+                user.getLogin(),
+                user.getName(),
+                user.getBirthday(),
+                user.getId()
+        );
+
+        logger.debug("Обновлена строка в таблице users с id = {}", user.getId());
+        return user;
     }
 
     public void addFriend(int userId, int friendId) {
-        String sql = "INSERT INTO friends(user_id, friend_id, status) VALUES (?, ?, 'pending')";
-        jdbc.update(sql, userId, friendId);
-    }
-
-    public void confirmFriend(int userId, int friendId) {
-        String sql = "UPDATE friends SET status='confirmed' WHERE user_id=? AND friend_id=?";
-        jdbc.update(sql,  userId, friendId);
+        logger.debug("Запрос на вставку строки в таблицу friendships");
+        insert(INSERT_INTO_FRIENDSHIPS_QUERY, userId, friendId);
+        logger.debug("Добавлена строка в таблицу friendships: user_id = {}, friend_id = {}", userId, friendId);
     }
 
     public void removeFriend(int userId, int friendId) {
-        String sql = "DELETE FROM friends WHERE (user_id=? AND friend_id=?) OR (user_id=? AND friend_id=?)";
-        jdbc.update(sql, userId, friendId, friendId, userId);
+        logger.debug("Запрос на удаление строки из таблицы friendships");
+        update(DELETE_FROM_FRIENDSHIPS_QUERY, userId, friendId);
+        logger.debug("Удалена строка из таблицы friendships: user_id = {}, friend_id = {}", userId, friendId);
     }
 
-    public List<User> getFriendsList(int userId) {
-        String sql = "SELECT u.* FROM users u " +
-                "JOIN friends f ON u.id = f.friend_id " +
-                "WHERE f.user_id=? AND f.status='confirmed'";
-        return jdbc.query(sql, userRowMapper, userId);
-    }
-
-    public List<User> getMutualFriends(int userId, int otherId) {
-        String sql = "SELECT u.* FROM users u " +
-                "JOIN friends f1 ON u.id = f1.friend_id " +
-                "JOIN friends f2 ON u.id = f2.friend_id " +
-                "WHERE f1.user_id=? AND f1.status='confirmed' " +
-                "AND f2.user_id=? AND f2.status='confirmed'";
-        return jdbc.query(sql, userRowMapper, userId, otherId);
+    public List<User> getFriends(int userId) {
+        logger.debug("Запрос на получение всех друзей пользователя с id = {}", userId);
+        return findMany(FIND_FRIENDS_QUERY, userId);
     }
 }
+

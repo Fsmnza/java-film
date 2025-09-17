@@ -1,37 +1,39 @@
 package ru.yandex.practicum.filmorate.dto;
 
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Past;
+import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 
 import java.time.LocalDate;
-import java.util.HashSet;
-import java.util.Set;
 
 @Data
 public class UpdateUserRequest {
+    @NotNull(message = "Не указан id")
     private Integer id;
-    private String login;
+    @Pattern(regexp = "^\\S+$", message = "Электронная почта не может быть пустой или содержать пробелы")
+    @Email(message = "Электронная почта не соответствует формату")
     private String email;
+    @Pattern(regexp = "^\\S+$", message = "Логин не может содержать пробелы")
+    private String login;
     private String name;
+    @Past(message = "Дата рождения не может быть в будущем")
     private LocalDate birthday;
-    private Set<Long> friends = new HashSet<>();
-
-    public boolean hasLogin() {
-        return !(login == null || login.isBlank());
-    }
 
     public boolean hasEmail() {
-        return !(email == null || email.isBlank());
+        return email != null;
+    }
+
+    public boolean hasLogin() {
+        return login != null;
+    }
+
+    public boolean hasName() {
+        return name != null;
     }
 
     public boolean hasBirthday() {
-        return !(birthday == null);
-    }
-
-    public boolean hasFriends() {
-        return !(friends == null || friends.isEmpty());
-    }
-
-    public boolean hasId() {
-        return !(id == null);
+        return birthday != null;
     }
 }

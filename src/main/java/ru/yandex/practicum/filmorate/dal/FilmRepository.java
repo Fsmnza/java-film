@@ -1,65 +1,158 @@
 package ru.yandex.practicum.filmorate.dal;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
+import ru.yandex.practicum.filmorate.dal.mappers.FoundFilmRepository;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
-import ru.yandex.practicum.filmorate.model.Rating;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Repository
-public class FilmRepository {
+public class FilmRepository extends FoundRepository {
+    private static final String TABLE_NAME = "films";
+    private static final String FIND_ALL_QUERY = """
+            SELECT
+                f.film_id AS film_id,
+                f.name AS film_name,
+                f.description AS film_description,
+                f.release_date AS film_release_date,
+                f.duration AS film_duration,
+                r.rating_id AS rating_id,
+                r.name AS rating_name,
+                g.genre_id AS genre_id,
+                g.name AS genre_name
+            FROM films AS f
+            LEFT JOIN ratings AS r ON f.rating_id = r.rating_id
+            LEFT JOIN film_genres AS fg ON f.film_id = fg.film_id
+            LEFT JOIN genres AS g ON fg.genre_id = g.genre_id
+            ORDER BY f.film_id""";
+    private static final String FIND_BY_ID_QUERY = """
+            SELECT
+                f.film_id AS film_id,
+                f.name AS film_name,
+                f.description AS film_description,
+                f.release_date AS film_release_date,
+                f.duration AS film_duration,
+                r.rating_id AS rating_id,
+                r.name AS rating_name,
+                g.genre_id AS genre_id,
+                g.name AS genre_name
+            FROM films AS f
+            LEFT JOIN ratings AS r ON f.rating_id = r.rating_id
+            LEFT JOIN film_genres AS fg ON f.film_id = fg.film_id
+            LEFT JOIN genres AS g ON fg.genre_id = g.genre_id
+            WHERE f.film_id = ?""";
+    private static final String INSERT_FILM_QUERY = "INSERT INTO " + TABLE_NAME +
+            "(name, description, release_date, duration, rating_id) " +
+            "VALUES(?, ?, ?, ?, ?)";
+    private static final String INSERT_FILM_GENRE_QUERY = "INSERT INTO film_genres(film_id, genre_id) " +
+            "VALUES(?, ?)";
+    private static final String UPDATE_QUERY = "UPDATE " + TABLE_NAME + " " +
+            "SET name = ?, description = ?, release_date = ?, duration = ? WHERE film_id = ?";
+    private static final String INSERT_FILM_LIKES_QUERY = "INSERT INTO film_likes(film_id, user_id) " +
+            "VALUES(?, ?)";
+    private static final String DELETE_FROM_FILM_LIKES_QUERY = "DELETE FROM film_likes " +
+            "WHERE film_id = ? AND user_id = ?";
+    private static final String GET_POPULAR_QUERY = """
+            SELECT
+                f.film_id AS film_id,
+                f.name AS film_name,
+                f.description AS film_description,
+                f.release_date AS film_release_date,
+                f.duration AS film_duration,
+                r.rating_id AS rating_id,
+                r.name AS rating_name,
+                g.genre_id AS genre_id,
+                g.name AS genre_name
+            FROM films AS f
+            JOIN film_likes AS fl ON f.film_id = fl.film_id
+            LEFT JOIN ratings AS r ON f.rating_id = r.rating_id
+            LEFT JOIN film_genres AS fg ON f.film_id = fg.film_id
+            LEFT JOIN genres AS g ON fg.genre_id = g.genre_id
+            GROUP BY film_id, genre_id
+            ORDER BY COUNT(fl.user_id) DESC
+            LIMIT ?
+            """;
+    private static final String GET_FILM_LIKES_QUERY = "SELECT user_id FROM film_likes WHERE film_id = ?";
+    private static final Logger logger = LoggerFactory.getLogger(FilmRepository.class);
+    private final FoundFilmRepository foundFilmRepository;
 
-    private final JdbcTemplate jdbc;
-
-    public FilmRepository(JdbcTemplate jdbc) {
-        this.jdbc = jdbc;
+    @Autowired
+    public FilmRepository(JdbcTemplate jdbcTemplate, RowMapper<Film> rowMapper, FoundFilmRepository foundFilmRepository) {
+        super(jdbcTemplate, rowMapper);
+        this.foundFilmRepository = foundFilmRepository;
     }
 
-    private final RowMapper<Film> filmRowMapper = (rs, rowNum) -> {
-        Rating rating = null;
-        if (rs.getObject("rating_id") != null) {
-            rating = new Rating(
-                    rs.getInt("rating_id"),
-                    rs.getString("rating_name")
-            );
+    public List<Film> getAll() {
+        logger.debug("Запрос на получение всех строк таблицы films");
+        return findMany(FIND_ALL_QUERY, foundFilmRepository);
+    }
+
+    public Optional<Film> getById(int filmId) {
+        logger.debug("Запрос на получение строки таблицы films с id = {}", filmId);
+        return findOne(FIND_BY_ID_QUERY, foundFilmRepository, filmId);
+    }
+
+    public Film create(Film film) {
+        logger.debug("Запрос на вставку в таблицу films");
+        int id = insert(INSERT_FILM_QUERY,
+                film.getName(),
+                film.getDescription(),
+                film.getReleaseDate(),
+                film.getDuration(),
+                film.getMpa().getId()
+        );
+        logger.debug("Получен новый id = {}", id);
+        film.setId(id);
+
+        for (Genre genre : film.getGenres()) {
+            insert(INSERT_FILM_GENRE_QUERY, film.getId(), genre.getId());
+            logger.debug("Добавлена строка в таблицу film_genres: film_id = {}, genre_id = {}",
+                    film.getId(), genre.getId());
         }
 
-        Set<Genre> genres = new HashSet<>();
+        logger.debug("Добавлена строка в таблицу films с id = {}", id);
+        return film;
+    }
 
-        return new Film(
-                rs.getInt("id"),
-                rs.getString("name"),
-                rs.getString("description"),
-                rs.getDate("releaseDate").toLocalDate(),
-                rs.getInt("duration"),
-                genres,
-                rating
-        );
-    };
+    public Film update(Film film) {
+        logger.debug("Запрос на обновление строки в таблице films с id = {}", film.getId());
+        update(UPDATE_QUERY,
+                film.getName(),
+                film.getDescription(),
+                film.getReleaseDate(),
+                film.getDuration(),
+                film.getId());
 
-    public void addLike(int filmId, int userId) {
-        String sql = "INSERT INTO likes(film_id, user_id) VALUES (?, ?)";
-        jdbc.update(sql, filmId, userId);
+        logger.debug("Обновлена строка в таблице films с id = {}", film.getId());
+        return film;
+    }
+
+    public void putLike(int filmId, int userId) {
+        logger.debug("Запрос на вставку строки в таблицу film_likes");
+        insert(INSERT_FILM_LIKES_QUERY, filmId, userId);
+        logger.debug("Добавлена строка в таблицу film_likes: film_id = {}, user_id = {}", filmId, userId);
     }
 
     public void removeLike(int filmId, int userId) {
-        String sql = "DELETE FROM likes WHERE film_id = ? AND user_id = ?";
-        jdbc.update(sql, filmId, userId);
+        logger.debug("Запрос на удаление строки из таблицы film_likes");
+        update(DELETE_FROM_FILM_LIKES_QUERY, filmId, userId);
+        logger.debug("Удалена строка из таблицы film_likes: film_id = {}, user_id = {}", filmId, userId);
     }
 
-    public List<Film> getPopularFilms(int limit) {
-        String sql = "SELECT f.*, r.name AS rating_name, f.rating_id, COUNT(l.user_id) AS like_count " +
-                "FROM film f " +
-                "LEFT JOIN rating r ON f.rating_id = r.id " +
-                "LEFT JOIN likes l ON f.id = l.film_id " +
-                "GROUP BY f.id, r.name, f.rating_id " +
-                "ORDER BY like_count DESC " +
-                "LIMIT ?";
-        return jdbc.query(sql, filmRowMapper, limit);
+    public List<Film> getPopular(int count) {
+        logger.debug("Запрос на получение первых {} популярных фильмов", count);
+        return findMany(GET_POPULAR_QUERY, foundFilmRepository, count);
     }
+
+    public List<Integer> getLikesUserId(int filmId) {
+        logger.debug("Запрос на получение всех user_id из таблицы film_likes для film_id = {}", filmId);
+        return super.findManyInts(GET_FILM_LIKES_QUERY, filmId);
+    }
+
 }
