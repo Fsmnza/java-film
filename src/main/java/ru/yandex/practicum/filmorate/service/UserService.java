@@ -37,7 +37,7 @@ public class UserService {
         Optional<User> mainUser = userRepository.getById(id);
 
         if (mainUser.isEmpty()) {
-            throw new NotFoundException("Пользователь с id = " + id + " не найден");
+            throw new NotFoundException("Пользователь с id: " + id + " не найден");
         }
 
         return UserMapper.mapToUserDto(mainUser.get());
