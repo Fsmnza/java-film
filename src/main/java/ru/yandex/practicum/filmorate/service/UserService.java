@@ -51,7 +51,7 @@ public class UserService {
         if (users.getName() == null) {
             users.setName(users.getLogin());
         }
-        users = userRepository.create(user);
+        users = userRepository.create(users);
         return UserMapper.mapToUserDto(users);
     }
 
