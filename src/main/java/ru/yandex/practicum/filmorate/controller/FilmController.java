@@ -67,7 +67,7 @@ public class FilmController {
         return switch (sortBy) {
             case "likes" -> filmService.getFilmsByDirectorSortedByLikes(id);
             case "year" -> filmService.getFilmsByDirectorSortedByYear(id);
-            default -> throw new IllegalArgumentException("Некорректный параметр sortBy: " + sortBy);
+            default -> throw new IllegalArgumentException("Некорректный параметр sortBy :" + sortBy);
         };
     }
 }
