@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Optional;
 
 public class FoundRepository<T> {
-    private final JdbcTemplate jdbcTemplate;
+    protected final JdbcTemplate jdbcTemplate;
     private final RowMapper<T> rowMapper;
     private static final Logger logger = LoggerFactory.getLogger(FoundRepository.class);
 
