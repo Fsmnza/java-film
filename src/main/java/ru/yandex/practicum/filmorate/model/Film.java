@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Set;
 
 @Getter
@@ -25,4 +26,5 @@ public class Film {
     private int duration;
     private Rating mpa;
     private Set<Genre> genres;
+    private List<Director> directors;
 }

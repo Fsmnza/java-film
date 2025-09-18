@@ -17,10 +17,7 @@ import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Rating;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -119,6 +116,26 @@ public class FilmService {
         }
         List<Film> popular = filmRepository.getPopular(count);
         return popular.stream()
+                .map(FilmMapper::mapToFilmDto)
+                .collect(Collectors.toList());
+    }
+
+    public List<FilmDto> getFilmsByDirectorSortedByLikes(Long directorId) {
+        List<Film> films = filmRepository.getFilmsByDirectorSortedByLikes(directorId);
+        if (films.isEmpty()) {
+            throw new NotFoundException("Фильмы режиссера с id = " + directorId + " не найдены");
+        }
+        return films.stream()
+                .map(FilmMapper::mapToFilmDto)
+                .collect(Collectors.toList());
+    }
+
+    public List<FilmDto> getFilmsByDirectorSortedByYear(Long directorId) {
+        List<Film> films = filmRepository.getFilmsByDirectorSortedByYear(directorId);
+        if (films.isEmpty()) {
+            throw new NotFoundException("Фильмы режиссера с id = " + directorId + " не найдены");
+        }
+        return films.stream()
                 .map(FilmMapper::mapToFilmDto)
                 .collect(Collectors.toList());
     }

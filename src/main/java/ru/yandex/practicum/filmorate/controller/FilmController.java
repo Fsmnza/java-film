@@ -59,4 +59,15 @@ public class FilmController {
     public List<FilmDto> getPopular(@RequestParam(defaultValue = "10") int count) {
         return filmService.getPopular(count);
     }
+
+    @GetMapping("/director/{id}")
+    public List<FilmDto> getFilmsByDirector(
+            @PathVariable Long id,
+            @RequestParam(name = "sortBy") String sortBy) {
+        return switch (sortBy) {
+            case "likes" -> filmService.getFilmsByDirectorSortedByLikes(id);
+            case "year" -> filmService.getFilmsByDirectorSortedByYear(id);
+            default -> throw new IllegalArgumentException("Некорректный параметр sortBy: " + sortBy);
+        };
+    }
 }

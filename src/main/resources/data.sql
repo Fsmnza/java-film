@@ -7,6 +7,8 @@ DELETE FROM genres;
 DELETE FROM ratings;
 DELETE FROM review_likes;
 DELETE FROM reviews;
+DELETE FROM film_directors;
+DELETE FROM directors;
 
 ALTER TABLE friendships ALTER COLUMN id RESTART WITH 1;
 ALTER TABLE film_likes ALTER COLUMN id RESTART WITH 1;
@@ -17,6 +19,9 @@ ALTER TABLE genres ALTER COLUMN genre_id RESTART WITH 1;
 ALTER TABLE ratings ALTER COLUMN rating_id RESTART WITH 1;
 ALTER TABLE review_likes ALTER COLUMN id RESTART WITH 1;
 ALTER TABLE reviews ALTER COLUMN review_id RESTART WITH 1;
+ALTER TABLE directors ALTER COLUMN director_id RESTART WITH 1;
+ALTER TABLE film_directors ALTER COLUMN film_id RESTART WITH 1;
+
 
 INSERT INTO genres(name) VALUES('Комедия');
 INSERT INTO genres(name) VALUES('Драма');
@@ -30,3 +35,4 @@ INSERT INTO ratings(name) VALUES('PG');
 INSERT INTO ratings(name) VALUES('PG-13');
 INSERT INTO ratings(name) VALUES('R');
 INSERT INTO ratings(name) VALUES('NC-17');
+
