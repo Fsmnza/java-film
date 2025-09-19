@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.dal.mappers.FoundFilmRepository;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
+import ru.yandex.practicum.filmorate.model.User;
 
 import java.util.*;
 
@@ -195,12 +196,24 @@ public class FilmRepository extends FoundRepository {
         return super.findManyInts(GET_FILM_LIKES_QUERY, filmId);
     }
 
-    public List<Film> getFilmsByDirectorSortedByLikes(Long directorId) {
+    public List<Film> getFilmsByDirectorSortedByLikes(Integer directorId) {
         logger.debug("Запрос на получение фильмов режиссера {} с сортировкой по лайкам", directorId);
-        return findMany(FIND_BY_DIRECTOR_SORTED_BY_LIKES, foundFilmRepository, directorId);
+        List<Film> films = findMany(FIND_BY_DIRECTOR_SORTED_BY_LIKES, foundFilmRepository, directorId);
+        for (Film film : films) {
+            Set<User> likes = new HashSet<>();
+            List<Integer> userIds = getLikesUserId(film.getId());
+            for (Integer userId : userIds) {
+                User user = new User();
+                user.setId(userId);
+                likes.add(user);
+            }
+            film.setLikes(likes);
+        }
+        return films;
     }
 
-    public List<Film> getFilmsByDirectorSortedByYear(Long directorId) {
+
+    public List<Film> getFilmsByDirectorSortedByYear(Integer directorId) {
         logger.debug("Запрос на получение фильмов режиссера {} с сортировкой по году", directorId);
         return findMany(FIND_BY_DIRECTOR_SORTED_BY_YEAR, foundFilmRepository, directorId);
     }

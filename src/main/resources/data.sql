@@ -35,4 +35,3 @@ INSERT INTO ratings(name) VALUES('PG');
 INSERT INTO ratings(name) VALUES('PG-13');
 INSERT INTO ratings(name) VALUES('R');
 INSERT INTO ratings(name) VALUES('NC-17');
-
