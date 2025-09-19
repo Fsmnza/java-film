@@ -1,10 +1,15 @@
 package ru.yandex.practicum.filmorate.dal;
 
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.model.Director;
 
+import java.sql.PreparedStatement;
+import java.sql.Statement;
 import java.util.List;
+import java.util.Objects;
 
 @Repository
 public class DirectorRepository {
@@ -34,9 +39,16 @@ public class DirectorRepository {
         );
     }
 
+
     public Director addDirector(Director director) {
         String sql = "INSERT INTO directors(name) VALUES (?)";
-        jdbcTemplate.update(sql, director.getName());
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(con -> {
+            PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            ps.setString(1, director.getName());
+            return ps;
+        }, keyHolder);
+        director.setId(Objects.requireNonNull(keyHolder.getKey()).intValue());
         return director;
     }
 
