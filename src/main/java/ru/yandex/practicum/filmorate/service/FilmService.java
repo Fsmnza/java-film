@@ -11,8 +11,6 @@ import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Rating;
-import ru.yandex.practicum.filmorate.storage.DirectorStorage;
-import ru.yandex.practicum.filmorate.storage.impl.DirectorDbStorage;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -23,21 +21,19 @@ public class FilmService {
     private final RatingRepository ratingRepository;
     private final GenreRepository genreRepository;
     private final UserRepository userRepository;
-    private final DirectorStorage directorStorage;
-    private DirectorDbStorage filmStorage;
+    private final DirectorRepository directorRepository;
 
     @Autowired
     public FilmService(FilmRepository filmRepository,
                        GenreRepository genreRepository,
                        RatingRepository ratingRepository,
                        UserRepository userRepository,
-                       DirectorStorage directorStorage, DirectorDbStorage filmStorage) {
+                       DirectorRepository directorRepository) {
         this.filmRepository = filmRepository;
         this.genreRepository = genreRepository;
         this.ratingRepository = ratingRepository;
         this.userRepository = userRepository;
-        this.directorStorage = directorStorage;
-        this.filmStorage = filmStorage;
+        this.directorRepository = directorRepository;
     }
 
     public FilmDto create(NewFilmRequest request) {
@@ -55,7 +51,7 @@ public class FilmService {
         Set<Director> directors = new HashSet<>();
         if (request.getDirectors() != null) {
             for (DirectorDto directorDto : request.getDirectors()) {
-                Director found = directorStorage.findById(directorDto.getId())
+                Director found = directorRepository.findById(directorDto.getId())
                         .orElseThrow(() -> new NotFoundException("Режиссёр с id=" + directorDto.getId() + " не найден"));
                 directors.add(found);
             }
@@ -95,7 +91,7 @@ public class FilmService {
         if (request.getDirectors() != null) {
             Set<Director> directors = new HashSet<>();
             for (DirectorDto directorDto : request.getDirectors()) {
-                Director found = directorStorage.findById(directorDto.getId())
+                Director found = directorRepository.findById(directorDto.getId())
                         .orElseThrow(() -> new NotFoundException("Режиссёр с id=" + directorDto.getId() + " не найден"));
                 directors.add(found);
             }
@@ -116,7 +112,7 @@ public class FilmService {
         }
         if (filmRepository.getLikesUserId(filmId).contains(userId)) {
             throw new ValidationException("Пользователь с id = " + userId +
-                                          " уже поставил лайк фильму с id = " + filmId);
+                    " уже поставил лайк фильму с id = " + filmId);
         }
         filmRepository.putLike(filmId, userId);
     }
@@ -141,14 +137,17 @@ public class FilmService {
                 .collect(Collectors.toList());
     }
 
-    public List<Film> getFilmsByDirector(int directorId, String sortBy) {
+    public List<FilmDto> getFilmsByDirector(int directorId, String sortBy) {
+        List<Film> films;
         if ("likes".equalsIgnoreCase(sortBy)) {
-            return filmStorage.getFilmsByDirectorSortedByLikes(directorId);
+            films = filmRepository.getFilmsByDirectorSortedByLikes(directorId);
         } else if ("year".equalsIgnoreCase(sortBy)) {
-            return filmStorage.getFilmsByDirectorSortedByYear(directorId);
+            films = filmRepository.getFilmsByDirectorSortedByYear(directorId);
         } else {
             throw new IllegalArgumentException("Некорректный параметр сортировки: " + sortBy);
         }
+        return films.stream()
+                .map(FilmMapper::mapToFilmDto)
+                .collect(Collectors.toList());
     }
-
 }

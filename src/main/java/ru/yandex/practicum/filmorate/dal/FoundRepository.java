@@ -61,6 +61,13 @@ public class FoundRepository<T> {
         }
     }
 
+    protected void insertSimple(String query, Object... params) {
+        int rows = jdbcTemplate.update(query, params);
+        if (rows == 0) {
+            logger.warn("Не было обновлено ни одной строки для запроса: {}", query);
+        }
+    }
+
     protected List<Integer> findManyInts(String query, Object... params) {
         return jdbcTemplate.query(query, (rs, rowNum) -> rs.getInt(1), params);
     }

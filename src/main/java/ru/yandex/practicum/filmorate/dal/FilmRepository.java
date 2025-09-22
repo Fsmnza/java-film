@@ -54,6 +54,37 @@ public class FilmRepository extends FoundRepository<Film> {
             ORDER BY COUNT(fl.user_id) DESC
             LIMIT ?
             """;
+
+    private static final String GET_FILMS_BY_DIRECTOR_SORTED_BY_LIKES = """
+        SELECT f.film_id AS film_id, f.name AS film_name, f.description AS film_description,
+               f.release_date AS film_release_date, f.duration AS film_duration,
+               r.rating_id AS rating_id, r.name AS rating_name,
+               d.director_id AS director_id, d.name AS director_name,
+               COUNT(fl.user_id) AS likes_count
+        FROM films f
+        JOIN film_directors fd ON f.film_id = fd.film_id
+        JOIN directors d ON fd.director_id = d.director_id
+        LEFT JOIN ratings r ON f.rating_id = r.rating_id
+        LEFT JOIN film_likes fl ON f.film_id = fl.film_id
+        WHERE fd.director_id = ?
+        GROUP BY f.film_id, r.rating_id, r.name, d.director_id, d.name
+        ORDER BY likes_count DESC
+        """;
+
+    private static final String GET_FILMS_BY_DIRECTOR_SORTED_BY_YEAR = """
+        SELECT f.film_id AS film_id, f.name AS film_name, f.description AS film_description,
+               f.release_date AS film_release_date, f.duration AS film_duration,
+               r.rating_id AS rating_id, r.name AS rating_name,
+               d.director_id AS director_id, d.name AS director_name
+        FROM films f
+        JOIN film_directors fd ON f.film_id = fd.film_id
+        JOIN directors d ON fd.director_id = d.director_id
+        LEFT JOIN ratings r ON f.rating_id = r.rating_id
+        WHERE fd.director_id = ?
+        ORDER BY f.release_date
+        """;
+    private static final String INSERT_FILM_DIRECTOR_QUERY = "INSERT INTO film_directors(film_id, director_id) VALUES (?, ?)";
+    private static final String DELETE_FILM_DIRECTORS_BY_FILM_ID_QUERY = "DELETE FROM film_directors WHERE film_id = ?";
     private static final String INSERT_FILM_QUERY = "INSERT INTO " + TABLE_NAME + "(name, description, release_date," + " duration, rating_id) " + "VALUES(?, ?, ?, ?, ?)";
     private static final String INSERT_FILM_GENRE_QUERY = "INSERT INTO film_genres(film_id, genre_id) " + "VALUES(?, ?)";
     private static final String UPDATE_QUERY = "UPDATE " + TABLE_NAME + " " + "SET name = ?, description = ?, " + "release_date = ?, duration = ? WHERE film_id = ?";
@@ -81,22 +112,32 @@ public class FilmRepository extends FoundRepository<Film> {
     }
 
     public Film create(Film film) {
-        logger.debug("Запрос на вставку в таблицу films");
-        int id = insert(INSERT_FILM_QUERY, film.getName(), film.getDescription(), film.getReleaseDate(), film.getDuration(), film.getMpa().getId());
-        logger.debug("Получен новый id = {}", id);
+        int id = insert(INSERT_FILM_QUERY, film.getName(), film.getDescription(), film.getReleaseDate(),
+                film.getDuration(), film.getMpa().getId());
         film.setId(id);
+
         for (Genre genre : film.getGenres()) {
             insert(INSERT_FILM_GENRE_QUERY, film.getId(), genre.getId());
-            logger.debug("Добавлена строка в таблицу film_genres: film_id = {}, genre_id = {}", film.getId(), genre.getId());
         }
-        logger.debug("Добавлена строка в таблицу films с id = {}", id);
+
+        if (film.getDirectors() != null) {
+            for (Director director : film.getDirectors()) {
+                insertSimple(INSERT_FILM_DIRECTOR_QUERY, film.getId(), director.getId());
+            }
+        }
         return film;
     }
 
     public Film update(Film film) {
-        logger.debug("Запрос на обновление строки в таблице films с id = {}", film.getId());
         update(UPDATE_QUERY, film.getName(), film.getDescription(), film.getReleaseDate(), film.getDuration(), film.getId());
-        logger.debug("Обновлена строка в таблице films с id = {}", film.getId());
+
+        update(DELETE_FILM_DIRECTORS_BY_FILM_ID_QUERY, film.getId());
+        if (film.getDirectors() != null) {
+            for (Director director : film.getDirectors()) {
+                insertSimple(INSERT_FILM_DIRECTOR_QUERY, film.getId(), director.getId());
+            }
+        }
+
         return film;
     }
 
@@ -120,5 +161,13 @@ public class FilmRepository extends FoundRepository<Film> {
     public List<Integer> getLikesUserId(int filmId) {
         logger.debug("Запрос на получение всех user_id из таблицы film_likes для film_id = {}", filmId);
         return super.findManyInts(GET_FILM_LIKES_QUERY, filmId);
+    }
+
+    public List<Film> getFilmsByDirectorSortedByLikes(int directorId) {
+        return findMany(GET_FILMS_BY_DIRECTOR_SORTED_BY_LIKES,  directorId);
+    }
+
+    public List<Film> getFilmsByDirectorSortedByYear(int directorId) {
+        return findMany(GET_FILMS_BY_DIRECTOR_SORTED_BY_YEAR, directorId);
     }
 }

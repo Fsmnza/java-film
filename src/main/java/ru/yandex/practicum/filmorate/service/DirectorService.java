@@ -2,8 +2,9 @@ package ru.yandex.practicum.filmorate.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.dal.DirectorRepository;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Director;
-import ru.yandex.practicum.filmorate.storage.DirectorStorage;
 
 import java.util.List;
 import java.util.Optional;
@@ -12,25 +13,36 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class DirectorService {
 
-    private final DirectorStorage directorStorage;
+    private final DirectorRepository directorRepository;
 
     public List<Director> getAll() {
-        return directorStorage.findAll();
+        return directorRepository.findAll();
     }
 
     public Optional<Director> getById(int id) {
-        return directorStorage.findById(id);
+        return directorRepository.findById(id);
     }
 
     public Director create(Director director) {
-        return directorStorage.create(director);
+        return directorRepository.create(director);
     }
 
     public Director update(Director director) {
-        return directorStorage.update(director);
+        // Проверяем, что режиссёр существует
+        Director existingDirector = directorRepository.findById(director.getId())
+                .orElseThrow(() -> new NotFoundException(
+                        "Режиссёр с id = " + director.getId() + " не найден"
+                ));
+        // Обновляем данные
+        existingDirector.setName(director.getName());
+        return directorRepository.update(existingDirector);
     }
 
     public void delete(int id) {
-        directorStorage.delete(id);
+        // Проверка на существование перед удалением
+        if (directorRepository.findById(id).isEmpty()) {
+            throw new NotFoundException("Режиссёр с id = " + id + " не найден");
+        }
+        directorRepository.delete(id);
     }
 }

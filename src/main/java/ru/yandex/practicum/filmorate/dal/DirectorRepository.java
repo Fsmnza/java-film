@@ -1,65 +1,49 @@
 package ru.yandex.practicum.filmorate.dal;
 
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.support.GeneratedKeyHolder;
-import org.springframework.jdbc.support.KeyHolder;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.model.Director;
 
-import java.sql.PreparedStatement;
-import java.sql.Statement;
 import java.util.List;
-import java.util.Objects;
+import java.util.Optional;
 
 @Repository
-public class DirectorRepository {
-    private final JdbcTemplate jdbcTemplate;
+public class DirectorRepository extends FoundRepository<Director> {
 
-    public DirectorRepository(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
+    private static final String FIND_ALL_QUERY = "SELECT director_id, name  FROM directors";
+    private static final String FIND_BY_ID_QUERY = "SELECT director_id, name  FROM directors WHERE director_id = ?";
+    private static final String INSERT_QUERY = "INSERT INTO directors (name) VALUES (?)";
+    private static final String UPDATE_QUERY = "UPDATE directors SET name = ? WHERE director_id = ?";
+    private static final String DELETE_QUERY = "DELETE FROM directors WHERE director_id = ?";
+
+
+    public DirectorRepository(JdbcTemplate jdbcTemplate,
+                              RowMapper<Director> directorRowMapper) {
+        super(jdbcTemplate, directorRowMapper);
     }
 
-    public List<Director> getAllDirectors() {
-        String sql = "SELECT * FROM directors";
-        return jdbcTemplate.query(sql, (rs, rowNum) ->
-                new Director(
-                        rs.getInt("director_id"),
-                        rs.getString("name")
-                )
-        );
+    public List<Director> findAll() {
+        return findMany(FIND_ALL_QUERY);
     }
 
-    public Director getDirector(int id) {
-        String sql = "SELECT * FROM directors WHERE director_id = ?";
-        return jdbcTemplate.queryForObject(sql, (rs, rowNum) ->
-                new Director(
-                        rs.getInt("director_id"),
-                        rs.getString("name")
-                ), id
-        );
+    public Optional<Director> findById(int id) {
+        return findOne(FIND_BY_ID_QUERY, id);
     }
 
-
-    public Director addDirector(Director director) {
-        String sql = "INSERT INTO directors(name) VALUES (?)";
-        KeyHolder keyHolder = new GeneratedKeyHolder();
-        jdbcTemplate.update(con -> {
-            PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-            ps.setString(1, director.getName());
-            return ps;
-        }, keyHolder);
-        director.setId(Objects.requireNonNull(keyHolder.getKey()).intValue());
+    public Director create(Director director) {
+        int id = insert(INSERT_QUERY, director.getName());
+        director.setId(id);
         return director;
     }
 
-    public Director updateDirector(Director director) {
-        String sql = "UPDATE directors SET name = ? WHERE director_id = ?";
-        jdbcTemplate.update(sql, director.getName(), director.getId());
+    public Director update(Director director) {
+        update(UPDATE_QUERY, director.getName(), director.getId());
         return director;
     }
 
-    public void deleteDirector(int id) {
-        String sql = "DELETE FROM directors WHERE director_id = ?";
-        jdbcTemplate.update(sql, id);
+    public void delete(int id) {
+        update(DELETE_QUERY, id);
     }
+
 }
