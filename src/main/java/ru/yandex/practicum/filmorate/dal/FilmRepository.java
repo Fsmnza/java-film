@@ -17,56 +17,49 @@ import java.util.*;
 public class FilmRepository extends FoundRepository<Film> {
     private static final String TABLE_NAME = "films";
     private static final String FIND_ALL_QUERY = """
-            SELECT f.film_id AS film_id, f.name AS film_name, f.description AS film_description, 
-                   f.release_date AS film_release_date, f.duration AS film_duration, 
-                   r.rating_id AS rating_id, r.name AS rating_name, 
-                   g.genre_id AS genre_id, g.name AS genre_name 
-            FROM films AS f 
-            LEFT JOIN ratings AS r ON f.rating_id = r.rating_id 
-            LEFT JOIN film_genres AS fg ON f.film_id = fg.film_id 
-            LEFT JOIN genres AS g ON fg.genre_id = g.genre_id 
+            SELECT f.film_id AS film_id, f.name AS film_name, f.description AS film_description,
+                   f.release_date AS film_release_date, f.duration AS film_duration,
+                   r.rating_id AS rating_id, r.name AS rating_name,
+                   g.genre_id AS genre_id, g.name AS genre_name
+            FROM films AS f
+            LEFT JOIN ratings AS r ON f.rating_id = r.rating_id
+            LEFT JOIN film_genres AS fg ON f.film_id = fg.film_id
+            LEFT JOIN genres AS g ON fg.genre_id = g.genre_id
             ORDER BY f.film_id
             """;
 
     private static final String FIND_BY_ID_QUERY = """
-            SELECT f.film_id AS film_id, f.name AS film_name, f.description AS film_description, 
-                   f.release_date AS film_release_date, f.duration AS film_duration, 
-                   r.rating_id AS rating_id, r.name AS rating_name, 
-                   g.genre_id AS genre_id, g.name AS genre_name 
-            FROM films AS f 
-            LEFT JOIN ratings AS r ON f.rating_id = r.rating_id 
-            LEFT JOIN film_genres AS fg ON f.film_id = fg.film_id 
-            LEFT JOIN genres AS g ON fg.genre_id = g.genre_id 
+            SELECT f.film_id AS film_id, f.name AS film_name, f.description AS film_description,
+                   f.release_date AS film_release_date, f.duration AS film_duration,
+                   r.rating_id AS rating_id, r.name AS rating_name,
+                   g.genre_id AS genre_id, g.name AS genre_name
+            FROM films AS f
+            LEFT JOIN ratings AS r ON f.rating_id = r.rating_id
+            LEFT JOIN film_genres AS fg ON f.film_id = fg.film_id
+            LEFT JOIN genres AS g ON fg.genre_id = g.genre_id
             WHERE f.film_id = ?
             """;
 
     private static final String GET_POPULAR_QUERY = """
-            SELECT f.film_id AS film_id, f.name AS film_name, f.description AS film_description, 
-                   f.release_date AS film_release_date, f.duration AS film_duration, 
-                   r.rating_id AS rating_id, r.name AS rating_name, 
-                   g.genre_id AS genre_id, g.name AS genre_name 
-            FROM films AS f 
-            JOIN film_likes AS fl ON f.film_id = fl.film_id 
-            LEFT JOIN ratings AS r ON f.rating_id = r.rating_id 
-            LEFT JOIN film_genres AS fg ON f.film_id = fg.film_id 
-            LEFT JOIN genres AS g ON fg.genre_id = g.genre_id 
-            GROUP BY film_id, genre_id 
-            ORDER BY COUNT(fl.user_id) DESC 
+            SELECT f.film_id AS film_id, f.name AS film_name, f.description AS film_description,
+                   f.release_date AS film_release_date, f.duration AS film_duration,
+                   r.rating_id AS rating_id, r.name AS rating_name,
+                   g.genre_id AS genre_id, g.name AS genre_name
+            FROM films AS f
+            JOIN film_likes AS fl ON f.film_id = fl.film_id
+            LEFT JOIN ratings AS r ON f.rating_id = r.rating_id
+            LEFT JOIN film_genres AS fg ON f.film_id = fg.film_id
+            LEFT JOIN genres AS g ON fg.genre_id = g.genre_id
+            GROUP BY film_id, genre_id
+            ORDER BY COUNT(fl.user_id) DESC
             LIMIT ?
             """;
-    private static final String INSERT_FILM_QUERY = "INSERT INTO " + TABLE_NAME +
-                                                    "(name, description, release_date," + " duration, rating_id) " +
-                                                    "VALUES(?, ?, ?, ?, ?)";
-    private static final String INSERT_FILM_GENRE_QUERY = "INSERT INTO film_genres(film_id, genre_id) "
-                                                          + "VALUES(?, ?)";
-    private static final String UPDATE_QUERY = "UPDATE " + TABLE_NAME + " " + "SET name = ?, description = ?, " +
-                                               "release_date = ?, duration = ? WHERE film_id = ?";
-    private static final String INSERT_FILM_LIKES_QUERY = "INSERT INTO film_likes(film_id, user_id) " +
-                                                          "VALUES(?, ?)";
-    private static final String DELETE_FROM_FILM_LIKES_QUERY = "DELETE FROM film_likes " + "WHERE film_id = ?" +
-                                                               " AND user_id = ?";
-    private static final String GET_FILM_LIKES_QUERY = "SELECT user_id FROM film_likes " +
-                                                       "WHERE film_id = ?";
+    private static final String INSERT_FILM_QUERY = "INSERT INTO " + TABLE_NAME + "(name, description, release_date," + " duration, rating_id) " + "VALUES(?, ?, ?, ?, ?)";
+    private static final String INSERT_FILM_GENRE_QUERY = "INSERT INTO film_genres(film_id, genre_id) " + "VALUES(?, ?)";
+    private static final String UPDATE_QUERY = "UPDATE " + TABLE_NAME + " " + "SET name = ?, description = ?, " + "release_date = ?, duration = ? WHERE film_id = ?";
+    private static final String INSERT_FILM_LIKES_QUERY = "INSERT INTO film_likes(film_id, user_id) " + "VALUES(?, ?)";
+    private static final String DELETE_FROM_FILM_LIKES_QUERY = "DELETE FROM film_likes " + "WHERE film_id = ?" + " AND user_id = ?";
+    private static final String GET_FILM_LIKES_QUERY = "SELECT user_id FROM film_likes " + "WHERE film_id = ?";
     private static final Logger logger = LoggerFactory.getLogger(FilmRepository.class);
     private final FoundFilmRepository foundFilmRepository;
 
