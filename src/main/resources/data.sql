@@ -1,15 +1,17 @@
+-- Очистка всех таблиц
 DELETE FROM friendships;
 DELETE FROM film_likes;
 DELETE FROM film_genres;
+DELETE FROM film_directors;
 DELETE FROM films;
 DELETE FROM users;
 DELETE FROM genres;
 DELETE FROM ratings;
 DELETE FROM review_likes;
 DELETE FROM reviews;
-DELETE FROM film_directors;
 DELETE FROM directors;
 
+-- Сброс автогенерируемых ID
 ALTER TABLE friendships ALTER COLUMN id RESTART WITH 1;
 ALTER TABLE film_likes ALTER COLUMN id RESTART WITH 1;
 ALTER TABLE film_genres ALTER COLUMN id RESTART WITH 1;
@@ -22,7 +24,7 @@ ALTER TABLE reviews ALTER COLUMN review_id RESTART WITH 1;
 ALTER TABLE directors ALTER COLUMN director_id RESTART WITH 1;
 ALTER TABLE film_directors ALTER COLUMN film_id RESTART WITH 1;
 
-
+-- Добавление жанров
 INSERT INTO genres(name) VALUES('Комедия');
 INSERT INTO genres(name) VALUES('Драма');
 INSERT INTO genres(name) VALUES('Мультфильм');
@@ -30,8 +32,11 @@ INSERT INTO genres(name) VALUES('Триллер');
 INSERT INTO genres(name) VALUES('Документальный');
 INSERT INTO genres(name) VALUES('Боевик');
 
+-- Добавление рейтингов
 INSERT INTO ratings(name) VALUES('G');
 INSERT INTO ratings(name) VALUES('PG');
 INSERT INTO ratings(name) VALUES('PG-13');
 INSERT INTO ratings(name) VALUES('R');
 INSERT INTO ratings(name) VALUES('NC-17');
+
+-- Добавление режиссёра

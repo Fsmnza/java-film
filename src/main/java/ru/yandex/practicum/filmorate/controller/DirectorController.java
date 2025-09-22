@@ -1,45 +1,46 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.dto.DirectorDto;
-import ru.yandex.practicum.filmorate.dto.UpdateDirectorRequest;
-import ru.yandex.practicum.filmorate.mappers.DirectorMapper;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.service.DirectorService;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/directors")
+@RequiredArgsConstructor
 public class DirectorController {
+
     private final DirectorService directorService;
 
-    public DirectorController(DirectorService directorService) {
-        this.directorService = directorService;
-    }
-
     @GetMapping
-    public List<DirectorDto> getAll() {
-        return directorService.getAllDirectors();
+    public List<Director> getAll() {
+        return directorService.getAll();
     }
 
     @GetMapping("/{id}")
-    public DirectorDto getById(@PathVariable Integer id) {
-        return directorService.getDirector(id);
+    public Director getById(@PathVariable int id) {
+        return directorService.getById(id)
+                .orElseThrow(() -> new NotFoundException("Режиссёр с id=" + id + " не найден"));
     }
 
+
     @PostMapping
-    public DirectorDto create(@RequestBody @Valid DirectorDto dto) {
-        return directorService.addDirector(DirectorMapper.fromDto(dto));
+    public Director create(@RequestBody @Valid Director director) {
+        return directorService.create(director);
     }
 
     @PutMapping
-    public DirectorDto update(@RequestBody @Valid UpdateDirectorRequest request) {
-        return directorService.updateDirector(DirectorMapper.fromUpdateRequest(request));
+    public Director update(@RequestBody @Valid Director director) {
+        return directorService.update(director);
     }
 
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable Integer id) {
-        directorService.deleteDirector(id);
+    public void delete(@PathVariable int id) {
+        directorService.delete(id);
     }
 }

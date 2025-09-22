@@ -1,33 +1,24 @@
 package ru.yandex.practicum.filmorate.model;
 
-import jakarta.persistence.ManyToMany;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.Size;
-import lombok.*;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
-@Getter
-@Setter
-@EqualsAndHashCode(exclude = {"id", "description"})
-@ToString
+@Data
+@NoArgsConstructor
 public class Film {
-    private Integer id;
-    @NotBlank(message = "Название не может быть пустым")
+    private int id;
     private String name;
-    @Size(max = 200, message = "Максимальная длина описания — 200 символов")
-    @NotBlank(message = "Описание должно быть заполнено")
     private String description;
-    @ReleaseDate
     private LocalDate releaseDate;
-    @Positive(message = "Продолжительность фильма должна быть положительным числом")
     private int duration;
     private Rating mpa;
-    private Set<Genre> genres;
-    private Set<Director> directors;
-    @ManyToMany
-    private Set<User> likes = new HashSet<>();
+    private List<Genre> genres = new ArrayList<>();
+    private List<Director> directors = new ArrayList<>();
+    private Set<Integer> likes = new HashSet<>();
 }
