@@ -1,20 +1,21 @@
 package ru.yandex.practicum.filmorate.model;
 
 import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+
 
 @Data
-public class Genre {
+@AllArgsConstructor
+@NoArgsConstructor
+public class Director {
     private Integer id;
     @NotBlank
     private String name;
 
-    public Genre() {
-    }
-
-    public Genre(Integer id, String name) {
+    public Director(int id, String name) {
         this.id = id;
         this.name = name;
     }
 }
-
