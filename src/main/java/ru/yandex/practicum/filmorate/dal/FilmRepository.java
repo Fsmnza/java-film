@@ -83,6 +83,26 @@ public class FilmRepository extends FoundRepository<Film> {
         WHERE fd.director_id = ?
         ORDER BY f.release_date
         """;
+
+    private static final String SEARCH_FILMS_QUERY = """
+            SELECT
+                f.film_id AS film_id,
+                f.name AS film_name,
+                f.description AS film_description,
+                f.release_date AS film_release_date,
+                f.duration AS film_duration,
+                r.rating_id AS rating_id,
+                r.name AS rating_name,
+                g.genre_id AS genre_id,
+                g.name AS genre_name
+            FROM films AS f
+            LEFT JOIN ratings AS r ON f.rating_id = r.rating_id
+            LEFT JOIN film_genres AS fg ON f.film_id = fg.film_id
+            LEFT JOIN genres AS g ON fg.genre_id = g.genre_id
+            WHERE LOWER(f.name) LIKE LOWER(?) OR LOWER(f.description) LIKE LOWER(?)
+            ORDER BY f.film_id
+            """;
+
     private static final String INSERT_FILM_DIRECTOR_QUERY = "INSERT INTO film_directors(film_id, director_id) VALUES (?, ?)";
     private static final String DELETE_FILM_DIRECTORS_BY_FILM_ID_QUERY = "DELETE FROM film_directors WHERE film_id = ?";
     private static final String INSERT_FILM_QUERY = "INSERT INTO " + TABLE_NAME + "(name, description, release_date," + " duration, rating_id) " + "VALUES(?, ?, ?, ?, ?)";
@@ -169,5 +189,11 @@ public class FilmRepository extends FoundRepository<Film> {
 
     public List<Film> getFilmsByDirectorSortedByYear(int directorId) {
         return findMany(GET_FILMS_BY_DIRECTOR_SORTED_BY_YEAR, directorId);
+    }
+
+    public List<Film> searchFilms(String query) {
+        logger.debug("Запрос на поиск фильмов по запросу: {}", query);
+        String searchPattern = "%" + query + "%";
+        return findMany(SEARCH_FILMS_QUERY, foundFilmRepository, searchPattern, searchPattern);
     }
 }
