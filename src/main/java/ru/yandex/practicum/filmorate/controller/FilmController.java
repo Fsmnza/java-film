@@ -4,7 +4,6 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-
 import ru.yandex.practicum.filmorate.dto.FilmDto;
 import ru.yandex.practicum.filmorate.dto.NewFilmRequest;
 import ru.yandex.practicum.filmorate.dto.UpdateFilmRequest;
@@ -58,5 +57,18 @@ public class FilmController {
     @GetMapping("/popular")
     public List<FilmDto> getPopular(@RequestParam(defaultValue = "10") int count) {
         return filmService.getPopular(count);
+    }
+
+    @GetMapping("/director/{directorId}")
+    public List<FilmDto> getFilmsByDirector(
+            @PathVariable int directorId,
+            @RequestParam String sortBy
+    ) {
+        return filmService.getFilmsByDirector(directorId, sortBy);
+    }
+
+    @GetMapping("/search")
+    public List<FilmDto> searchFilms(@RequestParam String query) {
+        return filmService.searchFilms(query);
     }
 }
