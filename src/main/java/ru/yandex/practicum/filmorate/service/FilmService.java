@@ -150,4 +150,20 @@ public class FilmService {
                 .map(FilmMapper::mapToFilmDto)
                 .collect(Collectors.toList());
     }
+
+    public List<FilmDto> searchFilms(String query) {
+        if (query == null || query.trim().isEmpty()) {
+            throw new ValidationException("Поисковый запрос не может быть пустым");
+        }
+
+        List<Film> foundFilms = filmRepository.searchFilms(query.trim());
+
+        if (foundFilms.isEmpty()) {
+            throw new NotFoundException("По запросу '" + query + "' не найдено ни одного фильма");
+        }
+
+        return foundFilms.stream()
+                .map(FilmMapper::mapToFilmDto)
+                .collect(Collectors.toList());
+    }
 }
