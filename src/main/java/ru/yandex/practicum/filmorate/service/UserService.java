@@ -2,13 +2,17 @@ package ru.yandex.practicum.filmorate.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.dal.FilmRepository;
 import ru.yandex.practicum.filmorate.dal.UserRepository;
+import ru.yandex.practicum.filmorate.dto.FilmDto;
 import ru.yandex.practicum.filmorate.dto.NewUserRequest;
 import ru.yandex.practicum.filmorate.dto.UpdateUserRequest;
 import ru.yandex.practicum.filmorate.dto.UserDto;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
+import ru.yandex.practicum.filmorate.mappers.FilmMapper;
 import ru.yandex.practicum.filmorate.mappers.UserMapper;
+import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.util.List;
@@ -18,10 +22,12 @@ import java.util.stream.Collectors;
 @Service
 public class UserService {
     private final UserRepository userRepository;
+    private final FilmRepository filmRepository;
 
     @Autowired
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, FilmRepository filmRepository) {
         this.userRepository = userRepository;
+        this.filmRepository = filmRepository;
     }
 
     public List<UserDto> getAll() {
@@ -125,6 +131,54 @@ public class UserService {
                 .collect(Collectors.toList());
         return commonFriends.stream()
                 .map(UserMapper::mapToUserDto)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * @param userId
+     * @return list of filmDto recommended for user
+     * 1. Фильмы, которые лайкнул текущий пользователь
+     * 2. Берём всех пользователей (кроме текущего)
+     * 3. Выбираем юзера с наибольшим числом совпадений
+     * 4. Возвращаем рекомендации - фильмы, которые лайкнул похожий, но не лайкнул текущий
+     */
+    public List<FilmDto> getRecommendations(int userId) {
+        userRepository.getById(userId)
+                .orElseThrow(() -> new NotFoundException("Пользователь с id = " + userId + " не найден"));
+
+        List<Film> userLikedFilms = filmRepository.getLikedFilmsByUser(userId);
+
+        List<User> allUsers = userRepository.getAll().stream()
+                .filter(u -> u.getId() != userId)
+                .collect(Collectors.toList());
+
+        User mostSimilarUser = null;
+        int maxIntersection = 0;
+
+        for (User other : allUsers) {
+            List<Film> otherLiked = filmRepository.getLikedFilmsByUser(other.getId());
+            int intersection = (int) otherLiked.stream()
+                    .filter(userLikedFilms::contains)
+                    .count();
+
+            if (intersection > maxIntersection) {
+                maxIntersection = intersection;
+                mostSimilarUser = other;
+            }
+        }
+
+        if (mostSimilarUser == null) {
+            return List.of();
+        }
+
+        List<Film> similarUserLiked = filmRepository.getLikedFilmsByUser(mostSimilarUser.getId());
+
+        List<Film> recommendations = similarUserLiked.stream()
+                .filter(film -> !userLikedFilms.contains(film))
+                .collect(Collectors.toList());
+
+        return recommendations.stream()
+                .map(FilmMapper::mapToFilmDto)
                 .collect(Collectors.toList());
     }
 }
