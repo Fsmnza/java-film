@@ -151,12 +151,23 @@ public class FilmService {
                 .collect(Collectors.toList());
     }
 
-    public List<FilmDto> searchFilms(String query) {
+    public List<FilmDto> searchFilms(String query, String by) {
         if (query == null || query.trim().isEmpty()) {
             throw new ValidationException("Поисковый запрос не может быть пустым");
         }
 
-        List<Film> foundFilms = filmRepository.searchFilms(query.trim());
+        String searchBy = (by != null) ? by.toLowerCase() : "title,director";
+        List<Film> foundFilms;
+
+        if (searchBy.contains("title") && searchBy.contains("director")) {
+            foundFilms = filmRepository.searchFilmsByTitleAndDirector(query.trim());
+        } else if (searchBy.contains("title")) {
+            foundFilms = filmRepository.searchFilmsByTitle(query.trim());
+        } else if (searchBy.contains("director")) {
+            foundFilms = filmRepository.searchFilmsByDirector(query.trim());
+        } else {
+            throw new ValidationException("Неверный параметр by. Допустимые значения: title, director");
+        }
 
         if (foundFilms.isEmpty()) {
             throw new NotFoundException("По запросу '" + query + "' не найдено ни одного фильма");
