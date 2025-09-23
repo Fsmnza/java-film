@@ -8,6 +8,7 @@ import lombok.Data;
 import ru.yandex.practicum.filmorate.model.ReleaseDate;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
 public class UpdateFilmRequest {
@@ -22,6 +23,7 @@ public class UpdateFilmRequest {
     private LocalDate releaseDate;
     @Positive(message = "Продолжительность фильма должна быть положительным числом")
     private Integer duration;
+    private List<DirectorDto> directors;
 
     public boolean hasName() {
         return name != null;
