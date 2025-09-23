@@ -17,43 +17,71 @@ import java.util.*;
 public class FilmRepository extends FoundRepository<Film> {
     private static final String TABLE_NAME = "films";
     private static final String FIND_ALL_QUERY = """
-            SELECT f.film_id AS film_id, f.name AS film_name, f.description AS film_description,
-                   f.release_date AS film_release_date, f.duration AS film_duration,
-                   r.rating_id AS rating_id, r.name AS rating_name,
-                   g.genre_id AS genre_id, g.name AS genre_name
-            FROM films AS f
-            LEFT JOIN ratings AS r ON f.rating_id = r.rating_id
-            LEFT JOIN film_genres AS fg ON f.film_id = fg.film_id
-            LEFT JOIN genres AS g ON fg.genre_id = g.genre_id
-            ORDER BY f.film_id
-            """;
+        SELECT
+            f.film_id AS film_id,
+            f.name AS film_name,
+            f.description AS film_description,
+            f.release_date AS film_release_date,
+            f.duration AS film_duration,
+            r.rating_id AS rating_id,
+            r.name AS rating_name,
+            g.genre_id AS genre_id,
+            g.name AS genre_name,
+            d.director_id AS director_id,
+            d.name AS director_name
+        FROM films AS f
+        LEFT JOIN ratings AS r ON f.rating_id = r.rating_id
+        LEFT JOIN film_genres AS fg ON f.film_id = fg.film_id
+        LEFT JOIN genres AS g ON fg.genre_id = g.genre_id
+        LEFT JOIN film_directors AS fd ON f.film_id = fd.film_id
+        LEFT JOIN directors AS d ON fd.director_id = d.director_id
+        ORDER BY f.film_id""";
 
     private static final String FIND_BY_ID_QUERY = """
-            SELECT f.film_id AS film_id, f.name AS film_name, f.description AS film_description,
-                   f.release_date AS film_release_date, f.duration AS film_duration,
-                   r.rating_id AS rating_id, r.name AS rating_name,
-                   g.genre_id AS genre_id, g.name AS genre_name
-            FROM films AS f
-            LEFT JOIN ratings AS r ON f.rating_id = r.rating_id
-            LEFT JOIN film_genres AS fg ON f.film_id = fg.film_id
-            LEFT JOIN genres AS g ON fg.genre_id = g.genre_id
-            WHERE f.film_id = ?
-            """;
+        SELECT
+            f.film_id AS film_id,
+            f.name AS film_name,
+            f.description AS film_description,
+            f.release_date AS film_release_date,
+            f.duration AS film_duration,
+            r.rating_id AS rating_id,
+            r.name AS rating_name,
+            g.genre_id AS genre_id,
+            g.name AS genre_name,
+            d.director_id AS director_id,
+            d.name AS director_name
+        FROM films AS f
+        LEFT JOIN ratings AS r ON f.rating_id = r.rating_id
+        LEFT JOIN film_genres AS fg ON f.film_id = fg.film_id
+        LEFT JOIN genres AS g ON fg.genre_id = g.genre_id
+        LEFT JOIN film_directors AS fd ON f.film_id = fd.film_id
+        LEFT JOIN directors AS d ON fd.director_id = d.director_id
+        WHERE f.film_id = ?""";
 
     private static final String GET_POPULAR_QUERY = """
-            SELECT f.film_id AS film_id, f.name AS film_name, f.description AS film_description,
-                   f.release_date AS film_release_date, f.duration AS film_duration,
-                   r.rating_id AS rating_id, r.name AS rating_name,
-                   g.genre_id AS genre_id, g.name AS genre_name
-            FROM films AS f
-            JOIN film_likes AS fl ON f.film_id = fl.film_id
-            LEFT JOIN ratings AS r ON f.rating_id = r.rating_id
-            LEFT JOIN film_genres AS fg ON f.film_id = fg.film_id
-            LEFT JOIN genres AS g ON fg.genre_id = g.genre_id
-            GROUP BY film_id, genre_id
-            ORDER BY COUNT(fl.user_id) DESC
-            LIMIT ?
-            """;
+        SELECT
+            f.film_id AS film_id,
+            f.name AS film_name,
+            f.description AS film_description,
+            f.release_date AS film_release_date,
+            f.duration AS film_duration,
+            r.rating_id AS rating_id,
+            r.name AS rating_name,
+            g.genre_id AS genre_id,
+            g.name AS genre_name,
+            d.director_id AS director_id,
+            d.name AS director_name
+        FROM films AS f
+        JOIN film_likes AS fl ON f.film_id = fl.film_id
+        LEFT JOIN ratings AS r ON f.rating_id = r.rating_id
+        LEFT JOIN film_genres AS fg ON f.film_id = fg.film_id
+        LEFT JOIN genres AS g ON fg.genre_id = g.genre_id
+        LEFT JOIN film_directors AS fd ON f.film_id = fd.film_id
+        LEFT JOIN directors AS d ON fd.director_id = d.director_id
+        GROUP BY film_id, genre_id, director_id
+        ORDER BY COUNT(fl.user_id) DESC
+        LIMIT ?
+        """;
 
     private static final String GET_FILMS_BY_DIRECTOR_SORTED_BY_LIKES = """
         SELECT f.film_id AS film_id, f.name AS film_name, f.description AS film_description,
@@ -117,15 +145,19 @@ public class FilmRepository extends FoundRepository<Film> {
             r.rating_id AS rating_id,
             r.name AS rating_name,
             g.genre_id AS genre_id,
-            g.name AS genre_name
+            g.name AS genre_name,
+            d.director_id AS director_id,
+            d.name AS director_name
         FROM films AS f
         LEFT JOIN ratings AS r ON f.rating_id = r.rating_id
         LEFT JOIN film_genres AS fg ON f.film_id = fg.film_id
         LEFT JOIN genres AS g ON fg.genre_id = g.genre_id
+        LEFT JOIN film_directors AS fd ON f.film_id = fd.film_id
+        LEFT JOIN directors AS d ON fd.director_id = d.director_id
         WHERE f.film_id IN (
-            SELECT fd.film_id FROM film_directors fd
-            JOIN directors d ON fd.director_id = d.director_id
-            WHERE LOWER(d.name) LIKE LOWER(?)
+            SELECT fd2.film_id FROM film_directors fd2
+            JOIN directors d2 ON fd2.director_id = d2.director_id
+            WHERE LOWER(d2.name) LIKE LOWER(?)
         )
         ORDER BY f.film_id
         """;
@@ -140,16 +172,20 @@ public class FilmRepository extends FoundRepository<Film> {
             r.rating_id AS rating_id,
             r.name AS rating_name,
             g.genre_id AS genre_id,
-            g.name AS genre_name
+            g.name AS genre_name,
+            d.director_id AS director_id,
+            d.name AS director_name
         FROM films AS f
         LEFT JOIN ratings AS r ON f.rating_id = r.rating_id
         LEFT JOIN film_genres AS fg ON f.film_id = fg.film_id
         LEFT JOIN genres AS g ON fg.genre_id = g.genre_id
+        LEFT JOIN film_directors AS fd ON f.film_id = fd.film_id
+        LEFT JOIN directors AS d ON fd.director_id = d.director_id
         WHERE LOWER(f.name) LIKE LOWER(?)
            OR f.film_id IN (
-                SELECT fd.film_id FROM film_directors fd
-                JOIN directors d ON fd.director_id = d.director_id
-                WHERE LOWER(d.name) LIKE LOWER(?)
+                SELECT fd2.film_id FROM film_directors fd2
+                JOIN directors d2 ON fd2.director_id = d2.director_id
+                WHERE LOWER(d2.name) LIKE LOWER(?)
            )
         ORDER BY f.film_id
         """;
