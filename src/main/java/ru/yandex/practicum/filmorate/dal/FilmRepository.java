@@ -141,7 +141,7 @@ public class FilmRepository extends FoundRepository<Film> {
         LEFT JOIN ratings AS r ON f.rating_id = r.rating_id
         LEFT JOIN film_genres AS fg ON f.film_id = fg.film_id
         LEFT JOIN genres AS g ON fg.genre_id = g.genre_id
-        WHERE LOWER(f.name) LIKE LOWER(?) 
+        WHERE LOWER(f.name) LIKE LOWER(?)
            OR f.film_id IN (
                 SELECT fd.film_id FROM film_directors fd
                 JOIN directors d ON fd.director_id = d.director_id
@@ -240,18 +240,18 @@ public class FilmRepository extends FoundRepository<Film> {
     public List<Film> searchFilmsByTitle(String query) {
         logger.debug("Поиск фильмов по названию: {}", query);
         String searchPattern = "%" + query + "%";
-        return (List<Film>) findMany(SEARCH_BY_TITLE_QUERY, foundFilmRepository, searchPattern);
+        return findMany(SEARCH_BY_TITLE_QUERY, foundFilmRepository, searchPattern);
     }
 
     public List<Film> searchFilmsByDirector(String query) {
         logger.debug("Поиск фильмов по режиссеру: {}", query);
         String searchPattern = "%" + query + "%";
-        return (List<Film>) findMany(SEARCH_BY_DIRECTOR_QUERY, foundFilmRepository, searchPattern);
+        return findMany(SEARCH_BY_DIRECTOR_QUERY, foundFilmRepository, searchPattern);
     }
 
     public List<Film> searchFilmsByTitleAndDirector(String query) {
         logger.debug("Поиск фильмов по названию и режиссеру: {}", query);
         String searchPattern = "%" + query + "%";
-        return (List<Film>) findMany(SEARCH_BY_TITLE_AND_DIRECTOR_QUERY, foundFilmRepository, searchPattern, searchPattern);
+        return findMany(SEARCH_BY_TITLE_AND_DIRECTOR_QUERY, foundFilmRepository, searchPattern, searchPattern);
     }
 }
