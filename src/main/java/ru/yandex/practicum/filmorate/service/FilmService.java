@@ -169,10 +169,6 @@ public class FilmService {
             throw new ValidationException("Неверный параметр by. Допустимые значения: title, director");
         }
 
-        if (foundFilms.isEmpty()) {
-            throw new NotFoundException("По запросу '" + query + "' не найдено ни одного фильма");
-        }
-
         return foundFilms.stream()
                 .map(FilmMapper::mapToFilmDto)
                 .collect(Collectors.toList());
