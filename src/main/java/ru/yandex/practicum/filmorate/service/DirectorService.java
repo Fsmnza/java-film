@@ -28,18 +28,15 @@ public class DirectorService {
     }
 
     public Director update(Director director) {
-        // Проверяем, что режиссёр существует
         Director existingDirector = directorRepository.findById(director.getId())
                 .orElseThrow(() -> new NotFoundException(
                         "Режиссёр с id = " + director.getId() + " не найден"
                 ));
-        // Обновляем данные
         existingDirector.setName(director.getName());
         return directorRepository.update(existingDirector);
     }
 
     public void delete(int id) {
-        // Проверка на существование перед удалением
         if (directorRepository.findById(id).isEmpty()) {
             throw new NotFoundException("Режиссёр с id = " + id + " не найден");
         }
