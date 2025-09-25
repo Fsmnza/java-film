@@ -127,11 +127,11 @@ public class FilmService {
         filmRepository.removeLike(filmId, userId);
     }
 
-    public List<FilmDto> getPopular(int count) {
+    public List<FilmDto> getPopular(int count, Integer genreId, Integer year) {
         if (count <= 0) {
             throw new ValidationException("Количество фильмов должно быть положительным числом");
         }
-        List<Film> popular = filmRepository.getPopular(count);
+        List<Film> popular = filmRepository.getPopular(count, genreId, year);
         return popular.stream()
                 .map(FilmMapper::mapToFilmDto)
                 .collect(Collectors.toList());

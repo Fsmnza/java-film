@@ -62,28 +62,19 @@ public class FilmRepository extends FoundRepository<Film> {
             WHERE f.film_id = ?""";
 
     private static final String GET_POPULAR_QUERY = """
-            SELECT
-                f.film_id AS film_id,
-                f.name AS film_name,
-                f.description AS film_description,
-                f.release_date AS film_release_date,
-                f.duration AS film_duration,
-                r.rating_id AS rating_id,
-                r.name AS rating_name,
-                g.genre_id AS genre_id,
-                g.name AS genre_name,
-                d.director_id AS director_id,
-                d.name AS director_name
-            FROM films AS f
-            JOIN film_likes AS fl ON f.film_id = fl.film_id
-            LEFT JOIN ratings AS r ON f.rating_id = r.rating_id
-            LEFT JOIN film_genres AS fg ON f.film_id = fg.film_id
-            LEFT JOIN genres AS g ON fg.genre_id = g.genre_id
-            LEFT JOIN film_directors AS fd ON f.film_id = fd.film_id
-            LEFT JOIN directors AS d ON fd.director_id = d.director_id
-            GROUP BY film_id, genre_id, director_id
-            ORDER BY COUNT(fl.user_id) DESC
-            LIMIT ?
+            SELECT f.film_id AS film_id, f.name AS film_name, f.description AS film_description,
+                   f.release_date AS film_release_date, f.duration AS film_duration,
+                   r.rating_id AS rating_id, r.name AS rating_name,
+                   g.genre_id AS genre_id, g.name AS genre_name,
+                   d.director_id AS director_id, d.name AS director_name,
+                   COUNT(fl.user_id) AS likes_count
+            FROM films f
+            LEFT JOIN ratings r ON f.rating_id = r.rating_id
+            LEFT JOIN film_genres fg ON f.film_id = fg.film_id
+            LEFT JOIN genres g ON fg.genre_id = g.genre_id
+            LEFT JOIN film_directors fd ON f.film_id = fd.film_id
+            LEFT JOIN directors d ON fd.director_id = d.director_id
+            LEFT JOIN film_likes fl ON f.film_id = fl.film_id
             """;
 
     private static final String GET_FILMS_BY_DIRECTOR_SORTED_BY_LIKES = """
@@ -295,9 +286,24 @@ public class FilmRepository extends FoundRepository<Film> {
         logger.debug("Удалена строка из таблицы film_likes: film_id = {}, user_id = {}", filmId, userId);
     }
 
-    public List<Film> getPopular(int count) {
-        logger.debug("Запрос на получение первых {} популярных фильмов", count);
-        return findMany(GET_POPULAR_QUERY, foundFilmRepository, count);
+    public List<Film> getPopular(int count, Integer genreId, Integer year) {
+        StringBuilder sql = new StringBuilder(GET_POPULAR_QUERY);
+
+        sql.append(" WHERE 1=1 ");
+        if (genreId != null) {
+            sql.append(" AND g.genre_id = ").append(genreId);
+        }
+        if (year != null) {
+            sql.append(" AND EXTRACT(YEAR FROM f.release_date) = ").append(year);
+        }
+
+        sql.append("""
+                GROUP BY f.film_id, r.rating_id, r.name, g.genre_id, g.name, d.director_id, d.name
+                ORDER BY likes_count DESC
+                LIMIT ?
+                """);
+
+        return findMany(sql.toString(), foundFilmRepository, count);
     }
 
     public List<Integer> getLikesUserId(int filmId) {
