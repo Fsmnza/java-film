@@ -208,6 +208,32 @@ public class FilmRepository extends FoundRepository<Film> {
             ORDER BY f.film_id
             """;
 
+    private static final String GET_COMMON_FILMS_WITH_FRIEND_SORTED_BY_LIKES = """
+    SELECT
+                f.film_id AS film_id,
+                f.name AS film_name,
+                f.description AS film_description,
+                f.release_date AS film_release_date,
+                f.duration AS film_duration,
+                r.rating_id AS rating_id,
+                r.name AS rating_name,
+                g.genre_id AS genre_id,
+                g.name AS genre_name,
+                d.director_id AS director_id,
+                d.name AS director_name
+            FROM films AS f
+            JOIN film_likes AS fl ON f.film_id = fl.film_id
+            LEFT JOIN ratings AS r ON f.rating_id = r.rating_id
+            LEFT JOIN film_genres AS fg ON f.film_id = fg.film_id
+            LEFT JOIN genres AS g ON fg.genre_id = g.genre_id
+            LEFT JOIN film_directors AS fd ON f.film_id = fd.film_id
+            LEFT JOIN directors AS d ON fd.director_id = d.director_id
+    JOIN film_likes fl1 ON fl1.film_id = f.film_id AND fl1.user_id = ?
+    JOIN film_likes fl2 ON fl2.film_id = f.film_id AND fl2.user_id = ?
+    LEFT JOIN film_likes fl_all ON fl_all.film_id = f.film_id
+    GROUP BY f.film_id
+    ORDER BY COUNT(fl_all.user_id) DESC
+""";
     private static final String INSERT_FILM_DIRECTOR_QUERY = "INSERT INTO film_directors(film_id, director_id) VALUES (?, ?)";
     private static final String DELETE_FILM_DIRECTORS_BY_FILM_ID_QUERY = "DELETE FROM film_directors WHERE film_id = ?";
     private static final String INSERT_FILM_QUERY = "INSERT INTO " + TABLE_NAME + "(name, description, release_date," + " duration, rating_id) " + "VALUES(?, ?, ?, ?, ?)";
@@ -340,5 +366,10 @@ public class FilmRepository extends FoundRepository<Film> {
     public List<Film> getLikedFilmsByUser(int userId) {
         logger.debug("Запрос на получение всех фильмов, лайкнутых пользователем с id = {}", userId);
         return findMany(GET_LIKED_FILMS_BY_USER_QUERY, foundFilmRepository, userId);
+    }
+
+    public List<Film> getCommonFilmsWithFriend(int userId, int friendId) {
+        logger.debug("Запрос на получение общих с другом фильмов. Айди пользователя = {}. Айди друга = {}", userId, friendId);
+        return findMany(GET_COMMON_FILMS_WITH_FRIEND_SORTED_BY_LIKES, foundFilmRepository, userId, friendId);
     }
 }

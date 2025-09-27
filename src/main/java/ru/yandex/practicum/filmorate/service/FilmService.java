@@ -178,4 +178,21 @@ public class FilmService {
                 .map(FilmMapper::mapToFilmDto)
                 .collect(Collectors.toList());
     }
+
+    public List<FilmDto> searchCommonFilmsWithFriend(int userId, int friendId) {
+        List<Film> foundFilms;
+        userRepository.getById(userId).orElseThrow(() -> new NotFoundException("Пользователь с id = " +
+                userId + "не найден"));
+        userRepository.getById(friendId).orElseThrow(() -> new NotFoundException("Друг с id = " +
+                userId + "не найден"));
+
+        if (!userRepository.isFriendshipExist(userId, friendId)) {
+            throw new RuntimeException("Пользователи не являются друзьями");
+        }
+
+        foundFilms = filmRepository.getCommonFilmsWithFriend(userId, friendId);
+        return foundFilms.stream()
+                .map(FilmMapper::mapToFilmDto)
+                .collect(Collectors.toList());
+    }
 }
