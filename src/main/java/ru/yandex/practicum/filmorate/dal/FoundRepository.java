@@ -85,4 +85,11 @@ public class FoundRepository<T> {
             return Optional.ofNullable(result.getFirst());
         }
     }
+
+    protected void newInsert(String query, Object... params) {
+        int rowsInserted = jdbcTemplate.update(query, params);
+        if (rowsInserted == 0) {
+            throw new RuntimeException("Не удалось вставить данные");
+        }
+    }
 }

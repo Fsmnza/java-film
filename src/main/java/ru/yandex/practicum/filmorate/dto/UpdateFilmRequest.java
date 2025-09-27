@@ -40,4 +40,8 @@ public class UpdateFilmRequest {
     public boolean hasDuration() {
         return duration != null;
     }
+
+    public boolean hasDirectors() {
+        return directors != null;
+    }
 }

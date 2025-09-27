@@ -55,7 +55,7 @@ public final class FilmMapper {
     }
 
 
-    public static Film updateFilmFields(Film film, UpdateFilmRequest request) {
+    public static Film updateFilmFields(Film film, UpdateFilmRequest request, List<Director> directors) {
         if (request.hasName()) {
             film.setName(request.getName());
         }
@@ -67,6 +67,9 @@ public final class FilmMapper {
         }
         if (request.hasDuration()) {
             film.setDuration(request.getDuration());
+        }
+        if (request.hasDirectors()) {
+            film.setDirectors(directors);
         }
         return film;
     }
