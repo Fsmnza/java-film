@@ -83,11 +83,9 @@ public class FilmController {
     public ResponseEntity<?> getCommonFilmsWithFriend(@RequestParam int userId, @RequestParam int friendId) {
         try {
             return ResponseEntity.status(HttpStatus.OK).body(filmService.searchCommonFilmsWithFriend(userId, friendId));
-        }
-        catch (NotFoundException e) {
+        } catch (NotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        }
-        catch (RuntimeException r) {
+        } catch (RuntimeException r) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(r.getMessage());
         }
     }
