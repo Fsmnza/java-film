@@ -1,17 +1,20 @@
 package ru.yandex.practicum.filmorate.service;
 
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.dal.FeedRepository;
 import ru.yandex.practicum.filmorate.dal.FilmRepository;
 import ru.yandex.practicum.filmorate.dal.UserRepository;
-import ru.yandex.practicum.filmorate.dto.FilmDto;
-import ru.yandex.practicum.filmorate.dto.NewUserRequest;
-import ru.yandex.practicum.filmorate.dto.UpdateUserRequest;
-import ru.yandex.practicum.filmorate.dto.UserDto;
+import ru.yandex.practicum.filmorate.dto.*;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
+import ru.yandex.practicum.filmorate.mappers.FeedMapper;
 import ru.yandex.practicum.filmorate.mappers.FilmMapper;
 import ru.yandex.practicum.filmorate.mappers.UserMapper;
+import ru.yandex.practicum.filmorate.model.EventType;
+import ru.yandex.practicum.filmorate.model.Feed;
+import ru.yandex.practicum.filmorate.model.Operation;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 
@@ -22,16 +25,17 @@ import java.util.stream.Collectors;
 @Service
 public class UserService {
     private final UserRepository userRepository;
+    private final FeedRepository feedRepository;
     private final FilmRepository filmRepository;
 
     @Autowired
-    public UserService(UserRepository userRepository, FilmRepository filmRepository) {
+    public UserService(UserRepository userRepository, FeedRepository feedRepository, FilmRepository filmRepository) {
         this.userRepository = userRepository;
+        this.feedRepository = feedRepository;
         this.filmRepository = filmRepository;
     }
 
     public List<UserDto> getAll() {
-
         return userRepository.getAll().stream()
                 .map(UserMapper::mapToUserDto)
                 .collect(Collectors.toList());
@@ -47,6 +51,7 @@ public class UserService {
         return UserMapper.mapToUserDto(mainUser.get());
     }
 
+    @Transactional
     public UserDto create(NewUserRequest request) {
         if (userRepository.getByEmail(request.getEmail()).isPresent()) {
             throw new ValidationException("Этот email уже используется");
@@ -59,6 +64,7 @@ public class UserService {
         return UserMapper.mapToUserDto(users);
     }
 
+    @Transactional
     public UserDto update(UpdateUserRequest request) {
         if (request.getId() == null) {
             throw new NotFoundException("Не указан id");
@@ -69,15 +75,15 @@ public class UserService {
         }
         User user = mainUser.get();
         if (request.getEmail() != null && !user.getEmail().equals(request.getEmail())
-                && userRepository.getByEmail(request.getEmail()).isPresent()) {
+            && userRepository.getByEmail(request.getEmail()).isPresent()) {
             throw new ValidationException("Этот email уже используется");
         }
-
         User updatedUser = UserMapper.updateUserFields(user, request);
         updatedUser = userRepository.update(updatedUser);
         return UserMapper.mapToUserDto(updatedUser);
     }
 
+    @Transactional
     public void addFriend(int userId, int friendId) {
         if (userRepository.getById(userId).isEmpty()) {
             throw new NotFoundException("Пользователь с id = " + userId + " не найден");
@@ -88,15 +94,19 @@ public class UserService {
         if (userId == friendId) {
             throw new ValidationException("Нельзя добавить пользователя в друзья к самому себе");
         }
-
         if (getFriends(userId).stream().anyMatch(friend -> friend.getId() == friendId)) {
             throw new ValidationException("Пользователи с id = " + userId + " и id = " + friendId +
-                    " уже являются друзьями");
+                                          " уже являются друзьями");
         }
-
+        if (getFriends(userId).stream().anyMatch(friend -> friend.getId() == friendId)) {
+            throw new ValidationException("Пользователи с id = " + userId + " и id = " + friendId +
+                                          " уже являются друзьями");
+        }
         userRepository.addFriend(userId, friendId);
+        feedRepository.create(new Feed(userId, friendId, EventType.FRIEND, Operation.ADD));
     }
 
+    @Transactional
     public void removeFriend(int userId, int friendId) {
         if (userRepository.getById(userId).isEmpty()) {
             throw new NotFoundException("Пользователь с id = " + userId + " не найден");
@@ -105,6 +115,7 @@ public class UserService {
             throw new NotFoundException("Пользователь с id = " + friendId + " не найден");
         }
         userRepository.removeFriend(userId, friendId);
+        feedRepository.create(new Feed(userId, friendId, EventType.FRIEND, Operation.REMOVE));
     }
 
     public List<UserDto> getFriends(int userId) {
@@ -132,6 +143,16 @@ public class UserService {
         return commonFriends.stream()
                 .map(UserMapper::mapToUserDto)
                 .collect(Collectors.toList());
+    }
+
+    public List<FeedDto> getFeed(int id) {
+        Optional<User> maybeUser = userRepository.getById(id);
+        if (maybeUser.isEmpty()) {
+            throw new NotFoundException("Пользователь с id = " + id + " не найден");
+        }
+        return feedRepository.getByUserId(id).stream()
+                .map(FeedMapper::mapToEventDto)
+                .toList();
     }
 
     /**
