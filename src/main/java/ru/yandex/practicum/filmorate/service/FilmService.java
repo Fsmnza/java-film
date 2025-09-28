@@ -114,7 +114,7 @@ public class FilmService {
         }
         if (filmRepository.getLikesUserId(filmId).contains(userId)) {
             throw new ValidationException("Пользователь с id = " + userId +
-                                          " уже поставил лайк фильму с id = " + filmId);
+                    " уже поставил лайк фильму с id = " + filmId);
         }
         filmRepository.putLike(filmId, userId);
         feedRepository.create(new Feed(userId, filmId, EventType.LIKE, Operation.ADD));
@@ -174,6 +174,23 @@ public class FilmService {
             throw new ValidationException("Неверный параметр by. Допустимые значения: title, director");
         }
 
+        return foundFilms.stream()
+                .map(FilmMapper::mapToFilmDto)
+                .collect(Collectors.toList());
+    }
+
+    public List<FilmDto> searchCommonFilmsWithFriend(int userId, int friendId) {
+        List<Film> foundFilms;
+        userRepository.getById(userId).orElseThrow(() -> new NotFoundException("Пользователь с id = " +
+                userId + "не найден"));
+        userRepository.getById(friendId).orElseThrow(() -> new NotFoundException("Друг с id = " +
+                userId + "не найден"));
+
+//        if (!userRepository.isFriendshipExist(userId, friendId)) {
+//            throw new RuntimeException("Пользователи не являются друзьями");
+//        }
+
+        foundFilms = filmRepository.getCommonFilmsWithFriend(userId, friendId);
         return foundFilms.stream()
                 .map(FilmMapper::mapToFilmDto)
                 .collect(Collectors.toList());

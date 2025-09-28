@@ -3,10 +3,12 @@ package ru.yandex.practicum.filmorate.controller;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.dto.FilmDto;
 import ru.yandex.practicum.filmorate.dto.NewFilmRequest;
 import ru.yandex.practicum.filmorate.dto.UpdateFilmRequest;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.service.FilmService;
 
 import java.util.List;
@@ -75,5 +77,16 @@ public class FilmController {
     public List<FilmDto> searchFilms(@RequestParam String query,
                                      @RequestParam(defaultValue = "title,director") String by) {
         return filmService.searchFilms(query, by);
+    }
+
+    @GetMapping("/common")
+    public ResponseEntity<?> getCommonFilmsWithFriend(@RequestParam int userId, @RequestParam int friendId) {
+        try {
+            return ResponseEntity.status(HttpStatus.OK).body(filmService.searchCommonFilmsWithFriend(userId, friendId));
+        } catch (NotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (RuntimeException r) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(r.getMessage());
+        }
     }
 }

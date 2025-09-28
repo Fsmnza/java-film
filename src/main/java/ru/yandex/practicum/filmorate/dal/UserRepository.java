@@ -29,6 +29,9 @@ public class UserRepository extends FoundRepository {
             "VALUES(?, ?, true)";
     private static final String DELETE_FROM_FRIENDSHIPS_QUERY = "DELETE FROM friendships " +
             "WHERE user_id = ? AND friend_id = ?";
+    private static final String FIND_FRIENDSHIP_BETWEEN_USERS = "SELECT id from friendships f where user_id = ? and " +
+            "friend_id = ? and f.status = true";
+
     static final Logger logger = LoggerFactory.getLogger(UserRepository.class);
 
     @Autowired
@@ -95,6 +98,12 @@ public class UserRepository extends FoundRepository {
     public List<User> getFriends(int userId) {
         logger.debug("Запрос на получение всех друзей пользователя с id = {}", userId);
         return findMany(FIND_FRIENDS_QUERY, userId);
+    }
+
+    public boolean isFriendshipExist(int userId, int friendId) {
+        logger.debug("Запрос на получение дружбы между двумя пользователями");
+        return findOne(FIND_FRIENDSHIP_BETWEEN_USERS, userId, friendId).isPresent();
+
     }
 }
 
