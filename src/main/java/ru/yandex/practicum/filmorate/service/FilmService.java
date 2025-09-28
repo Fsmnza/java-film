@@ -195,4 +195,11 @@ public class FilmService {
                 .map(FilmMapper::mapToFilmDto)
                 .collect(Collectors.toList());
     }
+
+    public void deleteById(int filmId) {
+        if (filmRepository.getById(filmId).isEmpty()) {
+            throw new NotFoundException("Фильм с id = " + filmId + " не найден");
+        }
+        filmRepository.deleteById(filmId);
+    }
 }

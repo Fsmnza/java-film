@@ -234,6 +234,10 @@ public class FilmRepository extends FoundRepository<Film> {
     GROUP BY f.film_id
     ORDER BY COUNT(fl_all.user_id) DESC
 """;
+    private static final String DELETE_FILM_QUERY = "DELETE FROM " + TABLE_NAME + " WHERE film_id = ?";
+    private static final String DELETE_FILM_GENRES_QUERY = "DELETE FROM film_genres WHERE film_id = ?";
+    private static final String DELETE_FILM_LIKES_QUERY = "DELETE FROM film_likes WHERE film_id = ?";
+    private static final String DELETE_FILM_DIRECTORS_QUERY = "DELETE FROM film_directors WHERE film_id = ?";
     private static final String INSERT_FILM_DIRECTOR_QUERY = "INSERT INTO film_directors(film_id, director_id) VALUES (?, ?)";
     private static final String DELETE_FILM_DIRECTORS_BY_FILM_ID_QUERY = "DELETE FROM film_directors WHERE film_id = ?";
     private static final String INSERT_FILM_QUERY = "INSERT INTO " + TABLE_NAME + "(name, description, release_date," + " duration, rating_id) " + "VALUES(?, ?, ?, ?, ?)";
@@ -371,5 +375,16 @@ public class FilmRepository extends FoundRepository<Film> {
     public List<Film> getCommonFilmsWithFriend(int userId, int friendId) {
         logger.debug("Запрос на получение общих с другом фильмов. Айди пользователя = {}. Айди друга = {}", userId, friendId);
         return findMany(GET_COMMON_FILMS_WITH_FRIEND_SORTED_BY_LIKES, foundFilmRepository, userId, friendId);
+    }
+
+    public void deleteById(int filmId) {
+        logger.debug("Запрос на удаление фильма с id = {}", filmId);
+
+        update(DELETE_FILM_GENRES_QUERY, filmId);
+        update(DELETE_FILM_LIKES_QUERY, filmId);
+        update(DELETE_FILM_DIRECTORS_QUERY, filmId);
+
+        update(DELETE_FILM_QUERY, filmId);
+        logger.debug("Фильм с id = {} удален", filmId);
     }
 }

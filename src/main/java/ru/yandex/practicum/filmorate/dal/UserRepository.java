@@ -31,7 +31,9 @@ public class UserRepository extends FoundRepository {
             "WHERE user_id = ? AND friend_id = ?";
     private static final String FIND_FRIENDSHIP_BETWEEN_USERS = "SELECT id from friendships f where user_id = ? and " +
             "friend_id = ? and f.status = true";
-
+    private static final String DELETE_USER_QUERY = "DELETE FROM " + TABLE_NAME + " WHERE user_id = ?";
+    private static final String DELETE_USER_FRIENDSHIPS_QUERY = "DELETE FROM friendships WHERE user_id = ? OR friend_id = ?";
+    private static final String DELETE_USER_LIKES_QUERY = "DELETE FROM film_likes WHERE user_id = ?";
     static final Logger logger = LoggerFactory.getLogger(UserRepository.class);
 
     @Autowired
@@ -105,5 +107,14 @@ public class UserRepository extends FoundRepository {
         return findOne(FIND_FRIENDSHIP_BETWEEN_USERS, userId, friendId).isPresent();
 
     }
-}
 
+    public void deleteById(int userId) {
+        logger.debug("Запрос на удаление пользователя с id = {}", userId);
+
+        update(DELETE_USER_FRIENDSHIPS_QUERY, userId, userId);
+        update(DELETE_USER_LIKES_QUERY, userId);
+
+        update(DELETE_USER_QUERY, userId);
+        logger.debug("Пользователь с id = {} удален", userId);
+    }
+}
