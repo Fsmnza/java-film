@@ -89,4 +89,10 @@ public class FilmController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(r.getMessage());
         }
     }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteFilm(@PathVariable int id) {
+        filmService.deleteById(id);
+    }
 }

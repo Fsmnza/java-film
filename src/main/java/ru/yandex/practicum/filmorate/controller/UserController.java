@@ -73,4 +73,9 @@ public class UserController {
         return userService.getRecommendations(id);
     }
 
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteUser(@PathVariable int id) {
+        userService.deleteById(id);
+    }
 }

@@ -202,4 +202,11 @@ public class UserService {
                 .map(FilmMapper::mapToFilmDto)
                 .collect(Collectors.toList());
     }
+
+    public void deleteById(int userId) {
+        if (userRepository.getById(userId).isEmpty()) {
+            throw new NotFoundException("Пользователь с id = " + userId + " не найден");
+        }
+        userRepository.deleteById(userId);
+    }
 }
