@@ -57,7 +57,7 @@ public class UserService {
             throw new ValidationException("Этот email уже используется");
         }
         User users = UserMapper.mapToUser(request);
-        if (users.getName() == null) {
+        if (users.getName() == null || users.getName().isBlank()) {
             users.setName(users.getLogin());
         }
         users = userRepository.create(users);

@@ -5,6 +5,8 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
+import ru.yandex.practicum.filmorate.model.Genre;
+import ru.yandex.practicum.filmorate.model.Rating;
 import ru.yandex.practicum.filmorate.model.ReleaseDate;
 
 import java.time.LocalDate;
@@ -24,6 +26,8 @@ public class UpdateFilmRequest {
     @Positive(message = "Продолжительность фильма должна быть положительным числом")
     private Integer duration;
     private List<DirectorDto> directors;
+    private List<Genre> genres;
+    private Rating mpa;
 
     public boolean hasName() {
         return name != null;
@@ -43,5 +47,11 @@ public class UpdateFilmRequest {
 
     public boolean hasDirectors() {
         return directors != null;
+    }
+    public boolean hasGenres() {
+        return genres != null;
+    }
+    public boolean hasMpa() {
+        return mpa != null;
     }
 }

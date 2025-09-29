@@ -6,7 +6,7 @@ import java.time.Instant;
 
 @Data
 public class Feed {
-    private Integer event_id;
+    private Integer eventId;
     private Integer userId;
     private Integer entityId;
     private EventType eventType;
@@ -22,6 +22,6 @@ public class Feed {
         this.entityId = entityId;
         this.eventType = eventType;
         this.operation = operation;
-        timestamp = Instant.now();
+        this.timestamp = Instant.now();
     }
 }

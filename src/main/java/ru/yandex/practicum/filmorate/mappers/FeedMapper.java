@@ -10,6 +10,7 @@ import ru.yandex.practicum.filmorate.model.Feed;
 public final class FeedMapper {
     public static FeedDto mapToEventDto(Feed feed) {
         FeedDto feedDto = new FeedDto();
+        feedDto.setEventId(feed.getEventId());
         feedDto.setTimestamp(feed.getTimestamp().toEpochMilli());
         feedDto.setUserId(feed.getUserId());
         feedDto.setEventType(feed.getEventType().name());

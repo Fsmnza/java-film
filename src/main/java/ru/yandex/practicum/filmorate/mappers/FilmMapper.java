@@ -68,11 +68,20 @@ public final class FilmMapper {
         if (request.hasDuration()) {
             film.setDuration(request.getDuration());
         }
+        if (request.hasMpa()) {
+            film.setMpa(new Rating(request.getMpa().getId(), request.getMpa().getName()));
+        }
+        if (request.hasGenres()) {
+            film.setGenres(request.getGenres().stream()
+                    .map(g -> new Genre(g.getId(), g.getName()))
+                    .collect(Collectors.toList()));
+        }
         if (request.hasDirectors()) {
             film.setDirectors(directors);
         }
         return film;
     }
+
 
     private static GenreDto mapToGenreDto(Genre genre) {
         GenreDto dto = new GenreDto();

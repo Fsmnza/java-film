@@ -12,8 +12,11 @@ import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Repository
 @Slf4j
@@ -209,31 +212,31 @@ public class FilmRepository extends FoundRepository<Film> {
             """;
 
     private static final String GET_COMMON_FILMS_WITH_FRIEND_SORTED_BY_LIKES = """
-    SELECT
-                f.film_id AS film_id,
-                f.name AS film_name,
-                f.description AS film_description,
-                f.release_date AS film_release_date,
-                f.duration AS film_duration,
-                r.rating_id AS rating_id,
-                r.name AS rating_name,
-                g.genre_id AS genre_id,
-                g.name AS genre_name,
-                d.director_id AS director_id,
-                d.name AS director_name
-            FROM films AS f
-            JOIN film_likes AS fl ON f.film_id = fl.film_id
-            LEFT JOIN ratings AS r ON f.rating_id = r.rating_id
-            LEFT JOIN film_genres AS fg ON f.film_id = fg.film_id
-            LEFT JOIN genres AS g ON fg.genre_id = g.genre_id
-            LEFT JOIN film_directors AS fd ON f.film_id = fd.film_id
-            LEFT JOIN directors AS d ON fd.director_id = d.director_id
-    JOIN film_likes fl1 ON fl1.film_id = f.film_id AND fl1.user_id = ?
-    JOIN film_likes fl2 ON fl2.film_id = f.film_id AND fl2.user_id = ?
-    LEFT JOIN film_likes fl_all ON fl_all.film_id = f.film_id
-    GROUP BY f.film_id
-    ORDER BY COUNT(fl_all.user_id) DESC
-""";
+                SELECT
+                            f.film_id AS film_id,
+                            f.name AS film_name,
+                            f.description AS film_description,
+                            f.release_date AS film_release_date,
+                            f.duration AS film_duration,
+                            r.rating_id AS rating_id,
+                            r.name AS rating_name,
+                            g.genre_id AS genre_id,
+                            g.name AS genre_name,
+                            d.director_id AS director_id,
+                            d.name AS director_name
+                        FROM films AS f
+                        JOIN film_likes AS fl ON f.film_id = fl.film_id
+                        LEFT JOIN ratings AS r ON f.rating_id = r.rating_id
+                        LEFT JOIN film_genres AS fg ON f.film_id = fg.film_id
+                        LEFT JOIN genres AS g ON fg.genre_id = g.genre_id
+                        LEFT JOIN film_directors AS fd ON f.film_id = fd.film_id
+                        LEFT JOIN directors AS d ON fd.director_id = d.director_id
+                JOIN film_likes fl1 ON fl1.film_id = f.film_id AND fl1.user_id = ?
+                JOIN film_likes fl2 ON fl2.film_id = f.film_id AND fl2.user_id = ?
+                LEFT JOIN film_likes fl_all ON fl_all.film_id = f.film_id
+                GROUP BY f.film_id
+                ORDER BY COUNT(fl_all.user_id) DESC
+            """;
     private static final String DELETE_FILM_QUERY = "DELETE FROM " + TABLE_NAME + " WHERE film_id = ?";
     private static final String DELETE_FILM_GENRES_QUERY = "DELETE FROM film_genres WHERE film_id = ?";
     private static final String DELETE_FILM_LIKES_QUERY = "DELETE FROM film_likes WHERE film_id = ?";
@@ -242,7 +245,10 @@ public class FilmRepository extends FoundRepository<Film> {
     private static final String DELETE_FILM_DIRECTORS_BY_FILM_ID_QUERY = "DELETE FROM film_directors WHERE film_id = ?";
     private static final String INSERT_FILM_QUERY = "INSERT INTO " + TABLE_NAME + "(name, description, release_date," + " duration, rating_id) " + "VALUES(?, ?, ?, ?, ?)";
     private static final String INSERT_FILM_GENRE_QUERY = "INSERT INTO film_genres(film_id, genre_id) " + "VALUES(?, ?)";
-    private static final String UPDATE_QUERY = "UPDATE " + TABLE_NAME + " " + "SET name = ?, description = ?, " + "release_date = ?, duration = ? WHERE film_id = ?";
+    private static final String UPDATE_QUERY =
+            "UPDATE films " +
+            "SET name = ?, description = ?, release_date = ?, duration = ?, rating_id = ? " +
+            "WHERE film_id = ?";
     private static final String INSERT_FILM_LIKES_QUERY = "INSERT INTO film_likes(film_id, user_id) " + "VALUES(?, ?)";
     private static final String DELETE_FROM_FILM_LIKES_QUERY = "DELETE FROM film_likes " + "WHERE film_id = ?" + " AND user_id = ?";
     private static final String GET_FILM_LIKES_QUERY = "SELECT user_id FROM film_likes " + "WHERE film_id = ?";
@@ -292,17 +298,28 @@ public class FilmRepository extends FoundRepository<Film> {
     }
 
     public Film update(Film film) {
-        update(UPDATE_QUERY, film.getName(), film.getDescription(), film.getReleaseDate(), film.getDuration(), film.getId());
-
+        update(UPDATE_QUERY,
+                film.getName(),
+                film.getDescription(),
+                film.getReleaseDate(),
+                film.getDuration(),
+                film.getMpa().getId(),
+                film.getId());
+        update(DELETE_FILM_GENRES_QUERY, film.getId());
         update(DELETE_FILM_DIRECTORS_BY_FILM_ID_QUERY, film.getId());
+        if (film.getGenres() != null) {
+            for (Genre genre : film.getGenres()) {
+                insert(INSERT_FILM_GENRE_QUERY, film.getId(), genre.getId());
+            }
+        }
         if (film.getDirectors() != null) {
             for (Director director : film.getDirectors()) {
                 insertSimple(INSERT_FILM_DIRECTOR_QUERY, film.getId(), director.getId());
             }
         }
-
         return film;
     }
+
 
     public void putLike(int filmId, int userId) {
         logger.debug("Запрос на вставку строки в таблицу film_likes");
