@@ -1,14 +1,13 @@
 package ru.yandex.practicum.filmorate.service;
 
-import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.dal.FeedRepository;
-import ru.yandex.practicum.filmorate.dal.FilmRepository;
 import ru.yandex.practicum.filmorate.dal.ReviewRepository;
-import ru.yandex.practicum.filmorate.dal.UserRepository;
+import ru.yandex.practicum.filmorate.dto.NewReviewRequest;
 import ru.yandex.practicum.filmorate.dto.ReviewDto;
 import ru.yandex.practicum.filmorate.dto.UpdateReviewRequest;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.mappers.ReviewMapper;
 import ru.yandex.practicum.filmorate.model.EventType;
 import ru.yandex.practicum.filmorate.model.Feed;
@@ -23,43 +22,48 @@ import java.util.stream.Collectors;
 public class ReviewService {
 
     private final ReviewRepository reviewRepository;
-    private final FilmRepository filmRepository;
-    private final UserRepository userRepository;
+    private final FilmService filmService;
+    private final UserService userService;
     private final FeedRepository feedRepository;
 
-    public ReviewService(ReviewRepository reviewRepository, FilmRepository filmRepository, UserRepository userRepository, FeedRepository feedRepository) {
+    public ReviewService(ReviewRepository reviewRepository, FilmService filmService, UserService userService,
+                         FeedRepository feedRepository) {
         this.reviewRepository = reviewRepository;
-        this.filmRepository = filmRepository;
-        this.userRepository = userRepository;
+        this.filmService = filmService;
+        this.userService = userService;
         this.feedRepository = feedRepository;
     }
 
-    @Transactional
-    public Review create(Review request) {
-        userRepository.getById(request.getUserId())
-                .orElseThrow(() -> new NotFoundException("Пользователь с id = " + request.getUserId() + " не найден"));
-        filmRepository.getById(request.getFilmId())
-                .orElseThrow(() -> new NotFoundException("Фильм с id = " + request.getFilmId() + " не найден"));
-        Review newReview = reviewRepository.create(request);
-        feedRepository.create(new Feed(newReview.getUserId(), newReview.getReviewId(),
+    public ReviewDto create(NewReviewRequest request) {
+        if (filmService.getById(request.getFilmId()) == null) {
+            throw new NotFoundException("Фильм не найден: " + request.getFilmId());
+        }
+        try {
+            userService.getById(request.getUserId());
+        } catch (NotFoundException e) {
+            throw new NotFoundException("Пользователь не найден: " + request.getUserId());
+        }
+        Review review = ReviewMapper.mapToReview(request);
+        Review created = reviewRepository.create(review);
+        feedRepository.create(new Feed(created.getUserId(), created.getReviewId(),
                 EventType.REVIEW, Operation.ADD));
-        return newReview;
+        return ReviewMapper.mapToReviewDto(created);
     }
 
-    @Transactional
-    public Review update(UpdateReviewRequest request) {
-        if (request.getReviewId() == null) {
-            throw new NotFoundException("Отзыв с id = null не найден");
-        }
+    public ReviewDto update(UpdateReviewRequest request) {
         Review review = reviewRepository.getById(request.getReviewId())
-                .orElseThrow(() -> new NotFoundException("Отзыв с id = " + request.getReviewId() + " не найден"));
+                .orElseThrow(() -> new NotFoundException("Отзыв не найден: " + request.getReviewId()));
+
+        if (!request.hasContent() && !request.hasIsPositive()) {
+            throw new ValidationException("Не указано ни одно поле для обновления");
+        }
         ReviewMapper.updateReviewFields(review, request);
         feedRepository.create(new Feed(review.getUserId(), review.getReviewId(),
                 EventType.REVIEW, Operation.UPDATE));
-        return reviewRepository.update(review);
+        Review updated = reviewRepository.update(review);
+        return ReviewMapper.mapToReviewDto(updated);
     }
 
-    @Transactional
     public void delete(int reviewId) {
         Optional<Review> newReview = reviewRepository.getById(reviewId);
         if (newReview.isEmpty()) {
@@ -114,7 +118,7 @@ public class ReviewService {
             throw new NotFoundException("Отзыв не найден: " + reviewId);
         }
         try {
-            userRepository.getById(userId);
+            userService.getById(userId);
         } catch (NotFoundException e) {
             throw new NotFoundException("Пользователь не найден: " + userId);
         }

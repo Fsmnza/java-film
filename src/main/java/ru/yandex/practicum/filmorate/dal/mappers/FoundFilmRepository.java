@@ -33,7 +33,7 @@ public class FoundFilmRepository implements ResultSetExtractor<List<Film>> {
                 mpaRating.setId(rs.getInt("rating_id"));
                 mpaRating.setName(rs.getString("rating_name"));
                 film.setMpa(mpaRating);
-                film.setGenres(new ArrayList<>());
+                film.setGenres(new HashSet<>());
                 film.setDirectors(new ArrayList<>());
                 filmMap.put(filmId, film);
             }

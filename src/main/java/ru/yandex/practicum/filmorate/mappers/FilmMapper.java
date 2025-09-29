@@ -49,11 +49,11 @@ public final class FilmMapper {
         film.setReleaseDate(request.getReleaseDate());
         film.setDuration(request.getDuration());
         film.setMpa(mpaRating);
-        film.setGenres(new ArrayList<>(genres));
+
+        film.setGenres(genres != null ? new HashSet<>(genres) : new HashSet<>());
         film.setDirectors(directors != null ? new ArrayList<>(directors) : new ArrayList<>());
         return film;
     }
-
 
     public static Film updateFilmFields(Film film, UpdateFilmRequest request, List<Director> directors) {
         if (request.hasName()) {
@@ -74,14 +74,16 @@ public final class FilmMapper {
         if (request.hasGenres()) {
             film.setGenres(request.getGenres().stream()
                     .map(g -> new Genre(g.getId(), g.getName()))
-                    .collect(Collectors.toList()));
+                    .collect(Collectors.toCollection(HashSet::new))
+            );
         }
         if (request.hasDirectors()) {
             film.setDirectors(directors);
+        } else {
+            film.setDirectors(new ArrayList<>());
         }
         return film;
     }
-
 
     private static GenreDto mapToGenreDto(Genre genre) {
         GenreDto dto = new GenreDto();

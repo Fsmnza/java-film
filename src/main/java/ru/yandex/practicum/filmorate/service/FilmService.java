@@ -89,8 +89,9 @@ public class FilmService {
         if (mainFilm.isEmpty()) {
             throw new NotFoundException("Фильм с id = " + request.getId() + " не найден");
         }
-        List<Director> directors = new ArrayList<>();
+        List<Director> directors = null;
         if (request.hasDirectors()) {
+            directors = new ArrayList<>();
             for (DirectorDto directorDto : request.getDirectors()) {
                 Optional<Director> maybeDirector = directorRepository.findById(directorDto.getId());
                 if (maybeDirector.isEmpty()) {
@@ -112,11 +113,9 @@ public class FilmService {
         if (userRepository.getById(userId).isEmpty()) {
             throw new NotFoundException("Пользователь с id = " + userId + " не найден");
         }
-        if (filmRepository.getLikesUserId(filmId).contains(userId)) {
-            throw new ValidationException("Пользователь с id = " + userId +
-                    " уже поставил лайк фильму с id = " + filmId);
+        if (!filmRepository.getLikesUserId(filmId).contains(userId)) {
+            filmRepository.putLike(filmId, userId);
         }
-        filmRepository.putLike(filmId, userId);
         feedRepository.create(new Feed(userId, filmId, EventType.LIKE, Operation.ADD));
     }
 
@@ -143,6 +142,9 @@ public class FilmService {
     }
 
     public List<FilmDto> getFilmsByDirector(int directorId, String sortBy) {
+        if (directorRepository.findById(directorId).isEmpty()) {
+            throw new NotFoundException("Режиссёр с id = " + directorId + " не найден");
+        }
         List<Film> films;
         if ("likes".equalsIgnoreCase(sortBy)) {
             films = filmRepository.getFilmsByDirectorSortedByLikes(directorId);
@@ -185,10 +187,6 @@ public class FilmService {
                 userId + "не найден"));
         userRepository.getById(friendId).orElseThrow(() -> new NotFoundException("Друг с id = " +
                 userId + "не найден"));
-
-//        if (!userRepository.isFriendshipExist(userId, friendId)) {
-//            throw new RuntimeException("Пользователи не являются друзьями");
-//        }
 
         foundFilms = filmRepository.getCommonFilmsWithFriend(userId, friendId);
         return foundFilms.stream()

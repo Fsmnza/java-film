@@ -2,9 +2,9 @@ package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.dto.NewReviewRequest;
 import ru.yandex.practicum.filmorate.dto.ReviewDto;
 import ru.yandex.practicum.filmorate.dto.UpdateReviewRequest;
-import ru.yandex.practicum.filmorate.model.Review;
 import ru.yandex.practicum.filmorate.service.ReviewService;
 
 import java.util.List;
@@ -20,12 +20,12 @@ public class ReviewController {
     }
 
     @PostMapping
-    public Review create(@Valid @RequestBody Review request) {
+    public ReviewDto create(@Valid @RequestBody NewReviewRequest request) {
         return reviewService.create(request);
     }
 
     @PutMapping
-    public Review update(@Valid @RequestBody UpdateReviewRequest request) {
+    public ReviewDto update(@Valid @RequestBody UpdateReviewRequest request) {
         return reviewService.update(request);
     }
 

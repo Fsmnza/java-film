@@ -18,7 +18,7 @@ public class Film {
     private LocalDate releaseDate;
     private int duration;
     private Rating mpa;
-    private List<Genre> genres = new ArrayList<>();
+    private Set<Genre> genres = new HashSet<>();
     private List<Director> directors = new ArrayList<>();
     private Set<Integer> likes = new HashSet<>();
 }
