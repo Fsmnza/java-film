@@ -4,7 +4,9 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.dto.*;
+import ru.yandex.practicum.filmorate.dto.NewUserRequest;
+import ru.yandex.practicum.filmorate.dto.UpdateUserRequest;
+import ru.yandex.practicum.filmorate.dto.UserDto;
 import ru.yandex.practicum.filmorate.service.UserService;
 
 import java.util.List;
@@ -61,21 +63,5 @@ public class UserController {
     public List<UserDto> getCommonFriends(@PathVariable int id,
                                           @PathVariable int otherId) {
         return userService.getCommonFriends(id, otherId);
-    }
-
-    @GetMapping("/{id}/feed")
-    public List<FeedDto> getFeed(@PathVariable int id) {
-        return userService.getFeed(id);
-    }
-
-    @GetMapping("/{id}/recommendations")
-    public List<FilmDto> getRecommendations(@PathVariable int id) {
-        return userService.getRecommendations(id);
-    }
-
-    @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteUser(@PathVariable int id) {
-        userService.deleteById(id);
     }
 }
