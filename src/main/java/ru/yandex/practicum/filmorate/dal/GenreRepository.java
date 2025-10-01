@@ -32,6 +32,7 @@ public class GenreRepository extends FoundRepository<Genre> {
         log.debug("Запрос на получение строки таблицы genres с id = {}", genreId);
         return findOne(FIND_BY_ID_QUERY, genreId);
     }
+
     public List<Genre> getByIds(List<Integer> ids) {
         if (ids == null || ids.isEmpty()) {
             return List.of();
@@ -40,17 +41,17 @@ public class GenreRepository extends FoundRepository<Genre> {
         String newGet = "SELECT genre_id, name FROM genres WHERE genre_id IN (" + placeholders + ")";
         return findMany(newGet, ids.toArray());
     }
+
     public Set<Genre> getGenresByFilmId(int filmId) {
         String query = """
-        SELECT g.genre_id, g.name 
-        FROM film_genres fg 
-        JOIN genres g ON fg.genre_id = g.genre_id 
-        WHERE fg.film_id = ?
-    """;
+                    SELECT g.genre_id, g.name 
+                    FROM film_genres fg 
+                    JOIN genres g ON fg.genre_id = g.genre_id 
+                    WHERE fg.film_id = ?
+                """;
         List<Genre> genreList = jdbcTemplate.query(query, (rs, rowNum) ->
                 new Genre(rs.getInt("genre_id"), rs.getString("name")), filmId);
         return new HashSet<>(genreList);
     }
-
 }
 
