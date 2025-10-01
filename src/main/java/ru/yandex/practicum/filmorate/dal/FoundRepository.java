@@ -14,9 +14,9 @@ import java.util.List;
 import java.util.Optional;
 
 public class FoundRepository<T> {
-    private final JdbcTemplate jdbcTemplate;
+    protected final JdbcTemplate jdbcTemplate;
     private final RowMapper<T> rowMapper;
-    private static final Logger logger = LoggerFactory.getLogger(FoundRepository.class);
+    protected static final Logger log = LoggerFactory.getLogger(FoundRepository.class);
 
     public FoundRepository(JdbcTemplate jdbcTemplate, RowMapper<T> rowMapper) {
         this.jdbcTemplate = jdbcTemplate;
@@ -39,7 +39,7 @@ public class FoundRepository<T> {
     protected void update(String query, Object... params) {
         int rowsUpdate = jdbcTemplate.update(query, params);
         if (rowsUpdate == 0) {
-            logger.warn("Не было обновлено ни одной строки");
+            log.warn("Не было обновлено ни одной строки");
         }
     }
 
@@ -61,6 +61,13 @@ public class FoundRepository<T> {
         }
     }
 
+    protected void insertSimple(String query, Object... params) {
+        int rows = jdbcTemplate.update(query, params);
+        if (rows == 0) {
+            log.warn("Не было обновлено ни одной строки для запроса: {}", query);
+        }
+    }
+
     protected List<Integer> findManyInts(String query, Object... params) {
         return jdbcTemplate.query(query, (rs, rowNum) -> rs.getInt(1), params);
     }
@@ -76,6 +83,13 @@ public class FoundRepository<T> {
             return Optional.empty();
         } else {
             return Optional.ofNullable(result.getFirst());
+        }
+    }
+
+    protected void newInsert(String query, Object... params) {
+        int rowsInserted = jdbcTemplate.update(query, params);
+        if (rowsInserted == 0) {
+            throw new RuntimeException("Не удалось вставить данные");
         }
     }
 }

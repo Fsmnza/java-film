@@ -21,7 +21,6 @@ public class UserRowMapper implements RowMapper<User> {
         if (birthday != null) {
             user.setBirthday(birthday.toLocalDate());
         }
-
         return user;
     }
 }
