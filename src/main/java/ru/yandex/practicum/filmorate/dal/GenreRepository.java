@@ -44,9 +44,9 @@ public class GenreRepository extends FoundRepository<Genre> {
 
     public Set<Genre> getGenresByFilmId(int filmId) {
         String query = """
-                    SELECT g.genre_id, g.name 
-                    FROM film_genres fg 
-                    JOIN genres g ON fg.genre_id = g.genre_id 
+                    SELECT g.genre_id, g.name
+                    FROM film_genres fg
+                    JOIN genres g ON fg.genre_id = g.genre_id
                     WHERE fg.film_id = ?
                 """;
         List<Genre> genreList = jdbcTemplate.query(query, (rs, rowNum) ->
