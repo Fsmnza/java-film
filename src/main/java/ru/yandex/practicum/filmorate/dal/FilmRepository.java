@@ -1,10 +1,8 @@
 package ru.yandex.practicum.filmorate.dal;
 
-import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.ParameterizedPreparedStatementSetter;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.dal.mappers.FilmRowMapper;
 import ru.yandex.practicum.filmorate.dal.mappers.FoundFilmRepository;
@@ -12,6 +10,8 @@ import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -19,7 +19,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Repository
-@Slf4j
 public class FilmRepository extends FoundRepository<Film> {
     private static final String TABLE_NAME = "films";
     private static final String FIND_ALL_QUERY = """
@@ -273,12 +272,12 @@ public class FilmRepository extends FoundRepository<Film> {
     private static final String INSERT_FILM_GENRE_QUERY = "INSERT INTO film_genres(film_id, genre_id) " + "VALUES(?, ?)";
     private static final String UPDATE_QUERY =
             "UPDATE films " +
-                    "SET name = ?, description = ?, release_date = ?, duration = ?, rating_id = ? " +
-                    "WHERE film_id = ?";
+            "SET name = ?, description = ?, release_date = ?, duration = ?, rating_id = ? " +
+            "WHERE film_id = ?";
     private static final String INSERT_FILM_LIKES_QUERY = "INSERT INTO film_likes(film_id, user_id) " + "VALUES(?, ?)";
     private static final String DELETE_FROM_FILM_LIKES_QUERY = "DELETE FROM film_likes " + "WHERE film_id = ?" + " AND user_id = ?";
     private static final String GET_FILM_LIKES_QUERY = "SELECT user_id FROM film_likes " + "WHERE film_id = ?";
-    private static final Logger logger = LoggerFactory.getLogger(FilmRepository.class);
+    //    private static final Logger logger = LoggerFactory.getLogger(FilmRepository.class);
     private final FoundFilmRepository foundFilmRepository;
 
     @Autowired
@@ -288,17 +287,17 @@ public class FilmRepository extends FoundRepository<Film> {
     }
 
     public List<Film> getAll() {
-        logger.debug("Запрос на получение всех строк таблицы films");
+        log.debug("Запрос на получение всех строк таблицы films");
         return findMany(FIND_ALL_QUERY, foundFilmRepository);
     }
 
     public Optional<Film> getById(int filmId) {
-        logger.debug("Запрос на получение строки таблицы films с id = {}", filmId);
+        log.debug("Запрос на получение строки таблицы films с id = {}", filmId);
         return findOne(FIND_BY_ID_QUERY, foundFilmRepository, filmId);
     }
 
     public Film create(Film film) {
-        logger.debug("Запрос на вставку в таблицу films");
+        log.debug("Запрос на вставку в таблицу films");
         int id = insert(INSERT_FILM_QUERY,
                 film.getName(),
                 film.getDescription(),
@@ -306,19 +305,33 @@ public class FilmRepository extends FoundRepository<Film> {
                 film.getDuration(),
                 film.getMpa().getId()
         );
-        logger.debug("Получен новый id = {}", id);
+        log.debug("Получен новый id = {}", id);
         film.setId(id);
-
-        for (Genre genre : film.getGenres()) {
-            insert(INSERT_FILM_GENRE_QUERY, film.getId(), genre.getId());
-            logger.debug("Добавлена строка в таблицу film_genres: film_id = {}, genre_id = {}",
-                    film.getId(), genre.getId());
+        if (film.getGenres() != null) {
+            jdbcTemplate.batchUpdate(INSERT_FILM_GENRE_QUERY,
+                    film.getGenres(),
+                    film.getGenres().size(),
+                    new ParameterizedPreparedStatementSetter<Genre>() {
+                        @Override
+                        public void setValues(PreparedStatement ps, Genre genre) throws SQLException {
+                            ps.setInt(1, film.getId());
+                            ps.setInt(2, genre.getId());
+                        }
+                    }
+            );
         }
-
         if (film.getDirectors() != null) {
-            for (Director director : film.getDirectors()) {
-                insertSimple(INSERT_FILM_DIRECTOR_QUERY, film.getId(), director.getId());
-            }
+            jdbcTemplate.batchUpdate(INSERT_FILM_DIRECTOR_QUERY,
+                    film.getDirectors(),
+                    film.getDirectors().size(),
+                    new ParameterizedPreparedStatementSetter<Director>() {
+                        @Override
+                        public void setValues(PreparedStatement ps, Director director) throws SQLException {
+                            ps.setInt(1, film.getId());
+                            ps.setInt(2, director.getId());
+                        }
+                    }
+            );
         }
         return film;
     }
@@ -333,54 +346,67 @@ public class FilmRepository extends FoundRepository<Film> {
                 film.getId());
         update(DELETE_FILM_GENRES_QUERY, film.getId());
         if (film.getGenres() != null) {
-            for (Genre genre : film.getGenres()) {
-                insert(INSERT_FILM_GENRE_QUERY, film.getId(), genre.getId());
-            }
+            jdbcTemplate.batchUpdate(INSERT_FILM_GENRE_QUERY,
+                    film.getGenres(),
+                    film.getGenres().size(),
+                    new ParameterizedPreparedStatementSetter<Genre>() {
+                        @Override
+                        public void setValues(PreparedStatement ps, Genre genre) throws SQLException {
+                            ps.setInt(1, film.getId());
+                            ps.setInt(2, genre.getId());
+                        }
+                    }
+            );
         }
         update(DELETE_FILM_DIRECTORS_BY_FILM_ID_QUERY, film.getId());
         if (film.getDirectors() != null && !film.getDirectors().isEmpty()) {
-            for (Director director : film.getDirectors()) {
-                insertSimple(INSERT_FILM_DIRECTOR_QUERY, film.getId(), director.getId());
-            }
+            jdbcTemplate.batchUpdate(INSERT_FILM_DIRECTOR_QUERY,
+                    film.getDirectors(),
+                    film.getDirectors().size(),
+                    new ParameterizedPreparedStatementSetter<Director>() {
+                        @Override
+                        public void setValues(PreparedStatement ps, Director director) throws SQLException {
+                            ps.setInt(1, film.getId());
+                            ps.setInt(2, director.getId());
+                        }
+                    }
+            );
         }
         return film;
     }
 
 
     public void putLike(int filmId, int userId) {
-        logger.debug("Запрос на вставку строки в таблицу film_likes");
+        log.debug("Запрос на вставку строки в таблицу film_likes");
         insert(INSERT_FILM_LIKES_QUERY, filmId, userId);
-        logger.debug("Добавлена строка в таблицу film_likes: film_id = {}, user_id = {}", filmId, userId);
+        log.debug("Добавлена строка в таблицу film_likes: film_id = {}, user_id = {}", filmId, userId);
     }
 
     public void removeLike(int filmId, int userId) {
-        logger.debug("Запрос на удаление строки из таблицы film_likes");
+        log.debug("Запрос на удаление строки из таблицы film_likes");
         update(DELETE_FROM_FILM_LIKES_QUERY, filmId, userId);
-        logger.debug("Удалена строка из таблицы film_likes: film_id = {}, user_id = {}", filmId, userId);
+        log.debug("Удалена строка из таблицы film_likes: film_id = {}, user_id = {}", filmId, userId);
     }
 
     public List<Film> getPopular(int count, Integer genreId, Integer year) {
         StringBuilder filter = new StringBuilder();
         List<Object> params = new ArrayList<>();
-
         if (year != null) {
             filter.append(" AND EXTRACT(YEAR FROM f.release_date) = ?");
             params.add(year);
         }
         if (genreId != null) {
-            filter.append(" AND EXISTS (SELECT 1 FROM film_genres fg WHERE fg.film_id = f.film_id AND fg.genre_id = ?)");
+            filter.append(" AND EXISTS (SELECT 1 FROM film_genres fg WHERE fg.film_id = f.film_id " +
+                          "AND fg.genre_id = ?)");
             params.add(genreId);
         }
-
         String filmIdsQuery = String.format(GET_POPULAR_FILM_IDS_QUERY, filter);
         params.add(count);
-
-        List<Integer> filmIds = jdbcTemplate.query(filmIdsQuery, (rs, rowNum) -> rs.getInt("film_id"), params.toArray());
-
+        List<Integer> filmIds = jdbcTemplate.query(filmIdsQuery, (rs, rowNum) ->
+                rs.getInt("film_id"), params.toArray());
         if (filmIds.isEmpty()) {
             return Collections.emptyList();
         }
-
         String inSql = filmIds.stream().map(String::valueOf).collect(Collectors.joining(","));
         String filmsQuery = String.format(GET_FILMS_BY_IDS_QUERY, inSql);
 
@@ -388,7 +414,7 @@ public class FilmRepository extends FoundRepository<Film> {
     }
 
     public List<Integer> getLikesUserId(int filmId) {
-        logger.debug("Запрос на получение всех user_id из таблицы film_likes для film_id = {}", filmId);
+        log.debug("Запрос на получение всех user_id из таблицы film_likes для film_id = {}", filmId);
         return super.findManyInts(GET_FILM_LIKES_QUERY, filmId);
     }
 
@@ -401,41 +427,42 @@ public class FilmRepository extends FoundRepository<Film> {
     }
 
     public List<Film> searchFilmsByTitle(String query) {
-        logger.debug("Поиск фильмов по названию: {}", query);
+        log.debug("Поиск фильмов по названию: {}", query);
         String searchPattern = "%" + query + "%";
         return findMany(SEARCH_BY_TITLE_QUERY, foundFilmRepository, searchPattern);
     }
 
     public List<Film> searchFilmsByDirector(String query) {
-        logger.debug("Поиск фильмов по режиссеру: {}", query);
+        log.debug("Поиск фильмов по режиссеру: {}", query);
         String searchPattern = "%" + query + "%";
         return findMany(SEARCH_BY_DIRECTOR_QUERY, foundFilmRepository, searchPattern);
     }
 
     public List<Film> searchFilmsByTitleAndDirector(String query) {
-        logger.debug("Поиск фильмов по названию и режиссеру: {}", query);
+        log.debug("Поиск фильмов по названию и режиссеру: {}", query);
         String searchPattern = "%" + query + "%";
         return findMany(SEARCH_BY_TITLE_AND_DIRECTOR_QUERY, foundFilmRepository, searchPattern, searchPattern);
     }
 
     public List<Film> getLikedFilmsByUser(int userId) {
-        logger.debug("Запрос на получение всех фильмов, лайкнутых пользователем с id = {}", userId);
+        log.debug("Запрос на получение всех фильмов, лайкнутых пользователем с id = {}", userId);
         return findMany(GET_LIKED_FILMS_BY_USER_QUERY, foundFilmRepository, userId);
     }
 
     public List<Film> getCommonFilmsWithFriend(int userId, int friendId) {
-        logger.debug("Запрос на получение общих с другом фильмов. Айди пользователя = {}. Айди друга = {}", userId, friendId);
+        log.debug("Запрос на получение общих с другом фильмов. Айди пользователя = {}. Айди друга = {}", userId,
+                friendId);
         return findMany(GET_COMMON_FILMS_WITH_FRIEND_SORTED_BY_LIKES, foundFilmRepository, userId, friendId);
     }
 
     public void deleteById(int filmId) {
-        logger.debug("Запрос на удаление фильма с id = {}", filmId);
+        log.debug("Запрос на удаление фильма с id = {}", filmId);
 
         update(DELETE_FILM_GENRES_QUERY, filmId);
         update(DELETE_FILM_LIKES_QUERY, filmId);
         update(DELETE_FILM_DIRECTORS_QUERY, filmId);
 
         update(DELETE_FILM_QUERY, filmId);
-        logger.debug("Фильм с id = {} удален", filmId);
+        log.debug("Фильм с id = {} удален", filmId);
     }
 }

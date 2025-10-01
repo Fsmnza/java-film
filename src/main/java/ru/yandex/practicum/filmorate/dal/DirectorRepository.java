@@ -17,7 +17,6 @@ public class DirectorRepository extends FoundRepository<Director> {
     private static final String UPDATE_QUERY = "UPDATE directors SET name = ? WHERE director_id = ?";
     private static final String DELETE_QUERY = "DELETE FROM directors WHERE director_id = ?";
 
-
     public DirectorRepository(JdbcTemplate jdbcTemplate,
                               RowMapper<Director> directorRowMapper) {
         super(jdbcTemplate, directorRowMapper);
@@ -46,4 +45,12 @@ public class DirectorRepository extends FoundRepository<Director> {
         update(DELETE_QUERY, id);
     }
 
+    public List<Director> findAllByIds(List<Integer> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
+        String placeholders = String.join(",", ids.stream().map(id -> "?").toList());
+        String newFind = "SELECT director_id, name FROM directors WHERE director_id IN (" + placeholders + ")";
+        return findMany(newFind, ids.toArray());
+    }
 }

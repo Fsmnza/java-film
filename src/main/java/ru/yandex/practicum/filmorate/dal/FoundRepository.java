@@ -16,7 +16,7 @@ import java.util.Optional;
 public class FoundRepository<T> {
     protected final JdbcTemplate jdbcTemplate;
     private final RowMapper<T> rowMapper;
-    private static final Logger logger = LoggerFactory.getLogger(FoundRepository.class);
+    protected static final Logger log = LoggerFactory.getLogger(FoundRepository.class);
 
     public FoundRepository(JdbcTemplate jdbcTemplate, RowMapper<T> rowMapper) {
         this.jdbcTemplate = jdbcTemplate;
@@ -39,7 +39,7 @@ public class FoundRepository<T> {
     protected void update(String query, Object... params) {
         int rowsUpdate = jdbcTemplate.update(query, params);
         if (rowsUpdate == 0) {
-            logger.warn("Не было обновлено ни одной строки");
+            log.warn("Не было обновлено ни одной строки");
         }
     }
 
@@ -64,7 +64,7 @@ public class FoundRepository<T> {
     protected void insertSimple(String query, Object... params) {
         int rows = jdbcTemplate.update(query, params);
         if (rows == 0) {
-            logger.warn("Не было обновлено ни одной строки для запроса: {}", query);
+            log.warn("Не было обновлено ни одной строки для запроса: {}", query);
         }
     }
 

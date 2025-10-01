@@ -1,7 +1,5 @@
 package ru.yandex.practicum.filmorate.dal;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -15,17 +13,15 @@ import java.util.Optional;
 public class ReviewRepository extends FoundRepository<Review> {
 
     private static final String TABLE_NAME = "reviews";
-    private static final Logger logger = LoggerFactory.getLogger(ReviewRepository.class);
-
     private static final String FIND_BY_ID_QUERY = "SELECT * FROM " + TABLE_NAME + " WHERE review_id = ?";
     private static final String FIND_ALL_QUERY = "SELECT * FROM " + TABLE_NAME + " ORDER BY useful DESC LIMIT ?";
     private static final String FIND_BY_FILM_ID_QUERY = "SELECT * FROM " + TABLE_NAME +
-            " WHERE film_id = ? ORDER BY useful DESC LIMIT ?";
+                                                        " WHERE film_id = ? ORDER BY useful DESC LIMIT ?";
 
     private static final String INSERT_REVIEW_QUERY = "INSERT INTO " + TABLE_NAME +
-            " (content, is_positive, user_id, film_id, useful) VALUES (?, ?, ?, ?, ?)";
+                                                      " (content, is_positive, user_id, film_id, useful) VALUES (?, ?, ?, ?, ?)";
     private static final String UPDATE_REVIEW_QUERY = "UPDATE " + TABLE_NAME +
-            " SET content = ?, is_positive = ? WHERE review_id = ?";
+                                                      " SET content = ?, is_positive = ? WHERE review_id = ?";
     private static final String DELETE_REVIEW_QUERY = "DELETE FROM " + TABLE_NAME + " WHERE review_id = ?";
 
     private static final String INSERT_REVIEW_LIKE_QUERY =

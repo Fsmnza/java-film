@@ -36,39 +36,6 @@ public class FilmService {
         this.feedRepository = feedRepository;
     }
 
-    @Transactional
-    public FilmDto create(NewFilmRequest request) {
-
-        Optional<Rating> maybeRating = ratingRepository.getById(request.getMpa().getId());
-        if (maybeRating.isEmpty()) {
-            throw new NotFoundException("Рейтинг с id = " + request.getMpa().getId() + " не найден");
-        }
-        Rating rating = maybeRating.get();
-        Set<Genre> genres = new HashSet<>();
-        if (request.getGenres() != null) {
-            for (GenreDto genreDto : request.getGenres()) {
-                Optional<Genre> maybeGenre = genreRepository.getById(genreDto.getId());
-                if (maybeGenre.isEmpty()) {
-                    throw new NotFoundException("Жанр с id = " + genreDto.getId() + " не найден");
-                }
-                genres.add(maybeGenre.get());
-            }
-        }
-        Set<Director> directors = new HashSet<>();
-        if (request.getDirectors() != null) {
-            for (DirectorDto directorDto : request.getDirectors()) {
-                Optional<Director> maybeDirector = directorRepository.findById(directorDto.getId());
-                if (maybeDirector.isEmpty()) {
-                    throw new NotFoundException("Режиссёр с id = " + directorDto.getId() + " не найден");
-                }
-                directors.add(maybeDirector.get());
-            }
-        }
-        Film film = FilmMapper.mapToFilm(request, rating, genres, directors);
-        filmRepository.create(film);
-        return FilmMapper.mapToFilmDto(film);
-    }
-
     public List<FilmDto> getAll() {
         return filmRepository.getAll().stream()
                 .map(FilmMapper::mapToFilmDto)
@@ -84,21 +51,55 @@ public class FilmService {
     }
 
     @Transactional
+    public FilmDto create(NewFilmRequest request) {
+        Optional<Rating> mainRaiting = ratingRepository.getById(request.getMpa().getId());
+        if (mainRaiting.isEmpty()) {
+            throw new NotFoundException("Рейтинг с id = " + request.getMpa().getId() + " не найден");
+        }
+        Set<Genre> genres = new HashSet<>();
+        if (request.getGenres() != null) {
+            List<Integer> genreIds = request.getGenres().stream()
+                    .map(GenreDto::getId)
+                    .toList();
+            List<Genre> foundGenres = genreRepository.getByIds(genreIds);
+            if (foundGenres.size() != genreIds.size()) {
+                throw new NotFoundException("Жанры с id = " + genreIds + " не найдены");
+            }
+            genres.addAll(foundGenres);
+        }
+        Rating mpaRating = mainRaiting.get();
+        Set<Director> directors = new HashSet<>();
+        if (request.getDirectors() != null) {
+            List<Integer> directorIds = request.getDirectors().stream()
+                    .map(DirectorDto::getId)
+                    .toList();
+            List<Director> foundDirectors = directorRepository.findAllByIds(directorIds);
+            if (foundDirectors.size() != directorIds.size()) {
+                throw new NotFoundException("Режисеры с id = " + directorIds + " не найдены");
+            }
+            directors.addAll(foundDirectors);
+        }
+        Film film = FilmMapper.mapToFilm(request, mpaRating, genres, directors);
+        filmRepository.create(film);
+        return FilmMapper.mapToFilmDto(film);
+    }
+
+    @Transactional
     public FilmDto update(UpdateFilmRequest request) {
         Optional<Film> mainFilm = filmRepository.getById(request.getId());
         if (mainFilm.isEmpty()) {
             throw new NotFoundException("Фильм с id = " + request.getId() + " не найден");
         }
-        List<Director> directors = null;
-        if (request.hasDirectors()) {
-            directors = new ArrayList<>();
-            for (DirectorDto directorDto : request.getDirectors()) {
-                Optional<Director> maybeDirector = directorRepository.findById(directorDto.getId());
-                if (maybeDirector.isEmpty()) {
-                    throw new NotFoundException("Режиссёр с id = " + directorDto.getId() + " не найден");
-                }
-                directors.add(maybeDirector.get());
+        List<Director> directors = new ArrayList<>();
+        if (request.getDirectors() != null && !request.getDirectors().isEmpty()) {
+            List<Integer> directorIds = request.getDirectors().stream()
+                    .map(DirectorDto::getId)
+                    .toList();
+            List<Director> foundDirectors = directorRepository.findAllByIds(directorIds);
+            if (foundDirectors.size() != directorIds.size()) {
+                throw new NotFoundException("Режисеры с id = " + directorIds + " не найдены");
             }
+            directors.addAll(foundDirectors);
         }
         Film updatedFilm = FilmMapper.updateFilmFields(mainFilm.get(), request, directors);
         updatedFilm = filmRepository.update(updatedFilm);
@@ -184,9 +185,9 @@ public class FilmService {
     public List<FilmDto> searchCommonFilmsWithFriend(int userId, int friendId) {
         List<Film> foundFilms;
         userRepository.getById(userId).orElseThrow(() -> new NotFoundException("Пользователь с id = " +
-                userId + "не найден"));
+                                                                               userId + "не найден"));
         userRepository.getById(friendId).orElseThrow(() -> new NotFoundException("Друг с id = " +
-                userId + "не найден"));
+                                                                                 userId + "не найден"));
 
         foundFilms = filmRepository.getCommonFilmsWithFriend(userId, friendId);
         return foundFilms.stream()
