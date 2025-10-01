@@ -35,5 +35,4 @@ public class RatingRepository extends FoundRepository<Rating> {
         return jdbcTemplate.queryForObject(query, (rs, rowNum) ->
                 new Rating(rs.getInt("rating_id"), rs.getString("name")), mpaId);
     }
-
 }
